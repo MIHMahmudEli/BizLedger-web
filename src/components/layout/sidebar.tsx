@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTheme } from "next-themes";
 import {
   LayoutDashboard,
   Building2,
@@ -12,6 +13,9 @@ import {
   BarChart3,
   Shield,
   LogOut,
+  Sun,
+  Moon,
+  Monitor,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
@@ -31,14 +35,21 @@ const navItems = [
 ];
 
 const ROLE_COLORS: Record<string, string> = {
-  ADMIN: "bg-red-100 text-red-800",
-  MANAGER: "bg-blue-100 text-blue-800",
-  STAFF: "bg-gray-100 text-gray-800",
+  ADMIN: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  MANAGER: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  STAFF: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
 };
+
+const themeOptions = [
+  { value: "light", icon: Sun, label: "Light" },
+  { value: "dark", icon: Moon, label: "Dark" },
+  { value: "system", icon: Monitor, label: "System" },
+] as const;
 
 export function Sidebar() {
   const pathname = usePathname();
   const { logout, user } = useAuth();
+  const { theme, setTheme } = useTheme();
 
   const visibleItems = navItems.filter(
     (item) => user && item.roles.includes(user.role)
@@ -87,7 +98,28 @@ export function Sidebar() {
 
           <Separator />
 
-          <div className="p-3 space-y-1">
+          <div className="p-3 space-y-2">
+            <div className="flex items-center justify-center gap-1 p-1 bg-muted rounded-lg">
+              {themeOptions.map(({ value, icon: Icon, label }) => (
+                <Tooltip key={value}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={theme === value ? "default" : "ghost"}
+                      size="sm"
+                      className={cn(
+                        "h-8 w-8 p-0",
+                        theme === value && "shadow-sm"
+                      )}
+                      onClick={() => setTheme(value)}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{label}</TooltipContent>
+                </Tooltip>
+              ))}
+            </div>
+
             {user && (
               <div className="px-3 py-2 text-xs text-muted-foreground space-y-1">
                 <div className="flex items-center gap-2">
