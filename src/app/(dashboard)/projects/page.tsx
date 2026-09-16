@@ -45,6 +45,7 @@ import {
   ProjectFinancial,
   ProjectStatus,
   PaginatedResponse,
+  Company,
 } from "@/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
@@ -125,6 +126,10 @@ export default function ProjectsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [companySearch, setCompanySearch] = useState("");
+  const [companyDropdownOpen, setCompanyDropdownOpen] = useState(false);
+
   useEffect(() => {
     fetchProjects();
   }, [page, search]);
@@ -155,6 +160,8 @@ export default function ProjectsPage() {
   const openAddDialog = () => {
     setEditingId(null);
     setForm(initialForm);
+    setCompanySearch("");
+    fetchCompanies();
     setFormOpen(true);
   };
 
@@ -170,6 +177,8 @@ export default function ProjectsPage() {
       deadline: project.deadline ? project.deadline.split("T")[0] : "",
       description: project.description || "",
     });
+    setCompanySearch("");
+    fetchCompanies();
     setFormOpen(true);
   };
 
@@ -185,7 +194,27 @@ export default function ProjectsPage() {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
+  const fetchCompanies = async () => {
+    try {
+      const response = await api.get<PaginatedResponse<Company>>("/companies", {
+        params: { limit: 100 },
+      });
+      setCompanies(response.data.data);
+    } catch (error) {
+      console.error("Failed to fetch companies:", error);
+    }
+  };
+
+  const filteredCompanies = companies.filter(
+    (c) =>
+      c.companyName.toLowerCase().includes(companySearch.toLowerCase()) ||
+      c.category?.toLowerCase().includes(companySearch.toLowerCase())
+  );
+
+  const selectedCompany = companies.find((c) => c.id === form.companyId);
+
   const handleSubmit = async () => {
+    if (!editingId && !form.companyId) return;
     setSubmitting(true);
     try {
       const payload = {
@@ -409,13 +438,42 @@ export default function ProjectsPage() {
           <div className="grid grid-cols-2 gap-4 py-2">
             {!editingId && (
               <div className="space-y-2">
-                <Label htmlFor="companyId">Company ID</Label>
-                <Input
-                  id="companyId"
-                  value={form.companyId}
-                  onChange={(e) => handleFormChange("companyId", e.target.value)}
-                  placeholder="Enter company ID"
-                />
+                <Label>Company *</Label>
+                <div className="relative">
+                  <Input
+                    value={companySearch || selectedCompany?.companyName || ""}
+                    onChange={(e) => {
+                      setCompanySearch(e.target.value);
+                      setCompanyDropdownOpen(true);
+                      if (form.companyId) {
+                        handleFormChange("companyId", "");
+                      }
+                    }}
+                    onFocus={() => setCompanyDropdownOpen(true)}
+                    onBlur={() => setTimeout(() => setCompanyDropdownOpen(false), 200)}
+                    placeholder="Search company name..."
+                  />
+                  {companyDropdownOpen && filteredCompanies.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto">
+                      {filteredCompanies.map((company) => (
+                        <div
+                          key={company.id}
+                          className="px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground"
+                          onMouseDown={() => {
+                            handleFormChange("companyId", company.id);
+                            setCompanySearch("");
+                            setCompanyDropdownOpen(false);
+                          }}
+                        >
+                          <div className="font-medium">{company.companyName}</div>
+                          {company.category && (
+                            <div className="text-xs text-muted-foreground">{company.category}</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
             <div className="space-y-2">
@@ -431,14 +489,31 @@ export default function ProjectsPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="projectType">Project Type</Label>
-              <Input
-                id="projectType"
+              <Select
                 value={form.projectType}
-                onChange={(e) =>
-                  handleFormChange("projectType", e.target.value)
-                }
-                placeholder="Enter project type"
-              />
+                onValueChange={(value) => handleFormChange("projectType", value)}
+              >
+                <SelectTrigger id="projectType">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Web Development">Web Development</SelectItem>
+                  <SelectItem value="Mobile App">Mobile App</SelectItem>
+                  <SelectItem value="Desktop Application">Desktop Application</SelectItem>
+                  <SelectItem value="E-Commerce">E-Commerce</SelectItem>
+                  <SelectItem value="ERP System">ERP System</SelectItem>
+                  <SelectItem value="CRM System">CRM System</SelectItem>
+                  <SelectItem value="UI/UX Design">UI/UX Design</SelectItem>
+                  <SelectItem value="API Development">API Development</SelectItem>
+                  <SelectItem value="Cloud Migration">Cloud Migration</SelectItem>
+                  <SelectItem value="DevOps">DevOps</SelectItem>
+                  <SelectItem value="Data Analytics">Data Analytics</SelectItem>
+                  <SelectItem value="AI/ML">AI/ML</SelectItem>
+                  <SelectItem value="Consulting">Consulting</SelectItem>
+                  <SelectItem value="Maintenance">Maintenance</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="totalValue">Total Value</Label>
