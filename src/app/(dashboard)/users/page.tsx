@@ -199,7 +199,7 @@ export default function UsersPage() {
                 {newRole === "MANAGER" ? "promote" : "demote"}{" "}
                 {selectedUser?.name}
               </strong>{" "}
-              to <Badge variant="secondary" className={ROLE_COLORS[newRole]}>{newRole}</Badge>?
+              to {newRole}?
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
