@@ -79,6 +79,24 @@ const PAYMENT_STATUS_VARIANT: Record<string, string> = {
   OVERPAID: "info",
 };
 
+const PROJECT_TYPES = [
+  "Web Development",
+  "Mobile App",
+  "Desktop Application",
+  "E-Commerce",
+  "ERP System",
+  "CRM System",
+  "UI/UX Design",
+  "API Development",
+  "Cloud Migration",
+  "DevOps",
+  "Data Analytics",
+  "AI/ML",
+  "Consulting",
+  "Maintenance",
+  "Other",
+];
+
 interface ProjectRow extends Project {
   financial?: ProjectFinancial;
 }
@@ -129,6 +147,8 @@ export default function ProjectsPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [companySearch, setCompanySearch] = useState("");
   const [companyDropdownOpen, setCompanyDropdownOpen] = useState(false);
+  const [projectTypeSearch, setProjectTypeSearch] = useState("");
+  const [projectTypeDropdownOpen, setProjectTypeDropdownOpen] = useState(false);
 
   useEffect(() => {
     fetchProjects();
@@ -161,6 +181,7 @@ export default function ProjectsPage() {
     setEditingId(null);
     setForm(initialForm);
     setCompanySearch("");
+    setProjectTypeSearch("");
     fetchCompanies();
     setFormOpen(true);
   };
@@ -178,6 +199,7 @@ export default function ProjectsPage() {
       description: project.description || "",
     });
     setCompanySearch("");
+    setProjectTypeSearch("");
     fetchCompanies();
     setFormOpen(true);
   };
@@ -489,31 +511,55 @@ export default function ProjectsPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="projectType">Project Type</Label>
-              <Select
-                value={form.projectType}
-                onValueChange={(value) => handleFormChange("projectType", value)}
-              >
-                <SelectTrigger id="projectType">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Web Development">Web Development</SelectItem>
-                  <SelectItem value="Mobile App">Mobile App</SelectItem>
-                  <SelectItem value="Desktop Application">Desktop Application</SelectItem>
-                  <SelectItem value="E-Commerce">E-Commerce</SelectItem>
-                  <SelectItem value="ERP System">ERP System</SelectItem>
-                  <SelectItem value="CRM System">CRM System</SelectItem>
-                  <SelectItem value="UI/UX Design">UI/UX Design</SelectItem>
-                  <SelectItem value="API Development">API Development</SelectItem>
-                  <SelectItem value="Cloud Migration">Cloud Migration</SelectItem>
-                  <SelectItem value="DevOps">DevOps</SelectItem>
-                  <SelectItem value="Data Analytics">Data Analytics</SelectItem>
-                  <SelectItem value="AI/ML">AI/ML</SelectItem>
-                  <SelectItem value="Consulting">Consulting</SelectItem>
-                  <SelectItem value="Maintenance">Maintenance</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="relative">
+                <Input
+                  id="projectType"
+                  value={form.projectType || projectTypeSearch}
+                  onChange={(e) => {
+                    setProjectTypeSearch(e.target.value);
+                    setProjectTypeDropdownOpen(true);
+                    if (form.projectType) {
+                      handleFormChange("projectType", "");
+                    }
+                  }}
+                  onFocus={() => setProjectTypeDropdownOpen(true)}
+                  onBlur={() => setTimeout(() => setProjectTypeDropdownOpen(false), 200)}
+                  placeholder="Select type"
+                />
+                {projectTypeDropdownOpen && (
+                  <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto">
+                    {!projectTypeSearch && !form.projectType && (
+                      <div
+                        className="px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground text-muted-foreground"
+                        onMouseDown={() => {
+                          handleFormChange("projectType", "");
+                          setProjectTypeSearch("");
+                          setProjectTypeDropdownOpen(false);
+                        }}
+                      >
+                        Select type
+                      </div>
+                    )}
+                    {PROJECT_TYPES.filter((type) =>
+                      type.toLowerCase().includes(projectTypeSearch.toLowerCase())
+                    ).map((type) => (
+                      <div
+                        key={type}
+                        className={`px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground ${
+                          form.projectType === type ? "bg-accent" : ""
+                        }`}
+                        onMouseDown={() => {
+                          handleFormChange("projectType", type);
+                          setProjectTypeSearch("");
+                          setProjectTypeDropdownOpen(false);
+                        }}
+                      >
+                        {type}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="totalValue">Total Value</Label>
