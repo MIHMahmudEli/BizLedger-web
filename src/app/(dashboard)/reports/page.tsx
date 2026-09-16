@@ -172,14 +172,35 @@ function OutstandingSection() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-2">
             <Label>Project Type</Label>
-            <Input
-              placeholder="e.g. Web Development"
+            <Select
               value={projectType}
-              onChange={(e) => {
-                setProjectType(e.target.value);
+              onValueChange={(value) => {
+                setProjectType(value === "all" ? "" : value);
                 setPage(1);
               }}
-            />
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="Web Development">Web Development</SelectItem>
+                <SelectItem value="Mobile App">Mobile App</SelectItem>
+                <SelectItem value="Desktop Application">Desktop Application</SelectItem>
+                <SelectItem value="E-Commerce">E-Commerce</SelectItem>
+                <SelectItem value="ERP System">ERP System</SelectItem>
+                <SelectItem value="CRM System">CRM System</SelectItem>
+                <SelectItem value="UI/UX Design">UI/UX Design</SelectItem>
+                <SelectItem value="API Development">API Development</SelectItem>
+                <SelectItem value="Cloud Migration">Cloud Migration</SelectItem>
+                <SelectItem value="DevOps">DevOps</SelectItem>
+                <SelectItem value="Data Analytics">Data Analytics</SelectItem>
+                <SelectItem value="AI/ML">AI/ML</SelectItem>
+                <SelectItem value="Consulting">Consulting</SelectItem>
+                <SelectItem value="Maintenance">Maintenance</SelectItem>
+                <SelectItem value="Other">Other</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label htmlFor="minDue">Min Due</Label>
