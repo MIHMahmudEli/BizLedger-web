@@ -28,6 +28,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import {
   Table,
@@ -410,12 +417,30 @@ export default function CompaniesPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="category">Category</Label>
-              <Input
-                id="category"
+              <Select
                 value={form.category}
-                onChange={(e) => setForm({ ...form, category: e.target.value })}
-                placeholder="Technology, Finance, etc."
-              />
+                onValueChange={(value) => setForm({ ...form, category: value })}
+              >
+                <SelectTrigger id="category">
+                  <SelectValue placeholder="Select a category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Technology">Technology</SelectItem>
+                  <SelectItem value="Finance">Finance</SelectItem>
+                  <SelectItem value="Agro">Agro</SelectItem>
+                  <SelectItem value="Healthcare">Healthcare</SelectItem>
+                  <SelectItem value="Education">Education</SelectItem>
+                  <SelectItem value="Real Estate">Real Estate</SelectItem>
+                  <SelectItem value="Manufacturing">Manufacturing</SelectItem>
+                  <SelectItem value="Retail">Retail</SelectItem>
+                  <SelectItem value="Hospitality">Hospitality</SelectItem>
+                  <SelectItem value="Construction">Construction</SelectItem>
+                  <SelectItem value="Transport">Transport</SelectItem>
+                  <SelectItem value="Energy">Energy</SelectItem>
+                  <SelectItem value="Telecom">Telecom</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="addressArea">Area</Label>
