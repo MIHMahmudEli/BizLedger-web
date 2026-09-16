@@ -603,14 +603,34 @@ export default function CompanyDetailPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="contact-designation">Designation</Label>
-              <Input
-                id="contact-designation"
+              <Select
                 value={contactForm.designation}
-                onChange={(e) =>
-                  setContactForm({ ...contactForm, designation: e.target.value })
+                onValueChange={(value) =>
+                  setContactForm({ ...contactForm, designation: value })
                 }
-                placeholder="Manager"
-              />
+              >
+                <SelectTrigger id="contact-designation">
+                  <SelectValue placeholder="Select designation" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Owner">Owner</SelectItem>
+                  <SelectItem value="Manager">Manager</SelectItem>
+                  <SelectItem value="Director">Director</SelectItem>
+                  <SelectItem value="CEO">CEO</SelectItem>
+                  <SelectItem value="CTO">CTO</SelectItem>
+                  <SelectItem value="CFO">CFO</SelectItem>
+                  <SelectItem value="Accountant">Accountant</SelectItem>
+                  <SelectItem value="HR Manager">HR Manager</SelectItem>
+                  <SelectItem value="Sales Manager">Sales Manager</SelectItem>
+                  <SelectItem value="Marketing Manager">Marketing Manager</SelectItem>
+                  <SelectItem value="Project Manager">Project Manager</SelectItem>
+                  <SelectItem value="Developer">Developer</SelectItem>
+                  <SelectItem value="Designer">Designer</SelectItem>
+                  <SelectItem value="Consultant">Consultant</SelectItem>
+                  <SelectItem value="Assistant">Assistant</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="contact-mobile">Mobile</Label>
