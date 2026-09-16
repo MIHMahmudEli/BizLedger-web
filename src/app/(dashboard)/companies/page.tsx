@@ -54,6 +54,23 @@ interface CompanyForm {
   website: string;
 }
 
+const CATEGORIES = [
+  "Technology",
+  "Finance",
+  "Agro",
+  "Healthcare",
+  "Education",
+  "Real Estate",
+  "Manufacturing",
+  "Retail",
+  "Hospitality",
+  "Construction",
+  "Transport",
+  "Energy",
+  "Telecom",
+  "Other",
+];
+
 const emptyForm: CompanyForm = {
   companyName: "",
   category: "",
@@ -78,6 +95,9 @@ export default function CompaniesPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletingCompany, setDeletingCompany] = useState<Company | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  const [categorySearch, setCategorySearch] = useState("");
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
 
   const fetchCompanies = useCallback(async (page = 1, searchQuery = searchDebounced, limitVal = limit) => {
     setLoading(true);
@@ -108,6 +128,7 @@ export default function CompaniesPage() {
   const openCreateDialog = () => {
     setEditingCompany(null);
     setForm(emptyForm);
+    setCategorySearch("");
     setFormOpen(true);
   };
 
@@ -120,6 +141,7 @@ export default function CompaniesPage() {
       addressArea: company.addressArea ?? "",
       website: company.website ?? "",
     });
+    setCategorySearch("");
     setFormOpen(true);
   };
 
@@ -410,30 +432,55 @@ export default function CompaniesPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="category">Category</Label>
-              <Select
-                value={form.category}
-                onValueChange={(value) => setForm({ ...form, category: value })}
-              >
-                <SelectTrigger id="category">
-                  <SelectValue placeholder="Select a category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Technology">Technology</SelectItem>
-                  <SelectItem value="Finance">Finance</SelectItem>
-                  <SelectItem value="Agro">Agro</SelectItem>
-                  <SelectItem value="Healthcare">Healthcare</SelectItem>
-                  <SelectItem value="Education">Education</SelectItem>
-                  <SelectItem value="Real Estate">Real Estate</SelectItem>
-                  <SelectItem value="Manufacturing">Manufacturing</SelectItem>
-                  <SelectItem value="Retail">Retail</SelectItem>
-                  <SelectItem value="Hospitality">Hospitality</SelectItem>
-                  <SelectItem value="Construction">Construction</SelectItem>
-                  <SelectItem value="Transport">Transport</SelectItem>
-                  <SelectItem value="Energy">Energy</SelectItem>
-                  <SelectItem value="Telecom">Telecom</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="relative">
+                <Input
+                  id="category"
+                  value={form.category || categorySearch}
+                  onChange={(e) => {
+                    setCategorySearch(e.target.value);
+                    setCategoryDropdownOpen(true);
+                    if (form.category) {
+                      setForm({ ...form, category: "" });
+                    }
+                  }}
+                  onFocus={() => setCategoryDropdownOpen(true)}
+                  onBlur={() => setTimeout(() => setCategoryDropdownOpen(false), 200)}
+                  placeholder="Select a category"
+                />
+                {categoryDropdownOpen && (
+                  <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto">
+                    {!categorySearch && !form.category && (
+                      <div
+                        className="px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground text-muted-foreground"
+                        onMouseDown={() => {
+                          setForm({ ...form, category: "" });
+                          setCategorySearch("");
+                          setCategoryDropdownOpen(false);
+                        }}
+                      >
+                        Select a category
+                      </div>
+                    )}
+                    {CATEGORIES.filter((cat) =>
+                      cat.toLowerCase().includes(categorySearch.toLowerCase())
+                    ).map((cat) => (
+                      <div
+                        key={cat}
+                        className={`px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground ${
+                          form.category === cat ? "bg-accent" : ""
+                        }`}
+                        onMouseDown={() => {
+                          setForm({ ...form, category: cat });
+                          setCategorySearch("");
+                          setCategoryDropdownOpen(false);
+                        }}
+                      >
+                        {cat}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="addressArea">Area</Label>
