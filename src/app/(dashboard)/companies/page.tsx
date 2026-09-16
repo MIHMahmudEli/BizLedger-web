@@ -37,6 +37,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { Company, PaginatedResponse } from "@/types";
 
 interface CompanyForm {
@@ -58,9 +65,10 @@ const emptyForm: CompanyForm = {
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
-  const [meta, setMeta] = useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
+  const [meta, setMeta] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
   const [search, setSearch] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
+  const [limit, setLimit] = useState(20);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
@@ -71,10 +79,10 @@ export default function CompaniesPage() {
   const [deletingCompany, setDeletingCompany] = useState<Company | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const fetchCompanies = useCallback(async (page = 1, searchQuery = searchDebounced) => {
+  const fetchCompanies = useCallback(async (page = 1, searchQuery = searchDebounced, limitVal = limit) => {
     setLoading(true);
     try {
-      const params: Record<string, string | number> = { page, limit: 10 };
+      const params: Record<string, string | number> = { page, limit: limitVal };
       if (searchQuery) params.search = searchQuery;
       const { data } = await api.get<PaginatedResponse<Company>>("/companies", { params });
       setCompanies(data.data);
@@ -84,7 +92,7 @@ export default function CompaniesPage() {
     } finally {
       setLoading(false);
     }
-  }, [searchDebounced]);
+  }, [searchDebounced, limit]);
 
   useEffect(() => {
     const timer = setTimeout(() => setSearchDebounced(search), 400);
@@ -93,7 +101,7 @@ export default function CompaniesPage() {
 
   useEffect(() => {
     fetchCompanies(1);
-  }, [searchDebounced, fetchCompanies]);
+  }, [searchDebounced, limit, fetchCompanies]);
 
   const handlePageChange = (page: number) => fetchCompanies(page);
 
@@ -182,11 +190,11 @@ export default function CompaniesPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search companies..."
+                placeholder="Search by name, category, area, website..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
@@ -199,6 +207,25 @@ export default function CompaniesPage() {
                   <X className="h-4 w-4" />
                 </button>
               )}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Show:</span>
+              <Select
+                value={String(limit)}
+                onValueChange={(value) => {
+                  setLimit(Number(value));
+                }}
+              >
+                <SelectTrigger className="w-[80px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardHeader>
