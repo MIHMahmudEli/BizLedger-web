@@ -3,18 +3,32 @@
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
+
+const ADMIN_ONLY_PATHS = ["/reports", "/"];
+const MANAGER_PLUS_PATHS = ["/reports", "/"];
 
 function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (!loading && !user) {
       router.push("/login");
     }
   }, [user, loading, router]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const isManagerPlus = user.role === "ADMIN" || user.role === "MANAGER";
+
+    if (!isManagerPlus && MANAGER_PLUS_PATHS.includes(pathname)) {
+      router.push("/companies");
+    }
+  }, [user, pathname, router]);
 
   if (loading) {
     return (

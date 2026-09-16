@@ -10,27 +10,37 @@ import {
   FolderKanban,
   CreditCard,
   BarChart3,
-  Settings,
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/companies", label: "Companies", icon: Building2 },
-  { href: "/contacts", label: "Contacts", icon: Users },
-  { href: "/projects", label: "Projects", icon: FolderKanban },
-  { href: "/payments", label: "Payments", icon: CreditCard },
-  { href: "/reports", label: "Reports", icon: BarChart3 },
+  { href: "/", label: "Dashboard", icon: LayoutDashboard, roles: ["ADMIN", "MANAGER"] },
+  { href: "/companies", label: "Companies", icon: Building2, roles: ["ADMIN", "MANAGER", "STAFF"] },
+  { href: "/contacts", label: "Contacts", icon: Users, roles: ["ADMIN", "MANAGER", "STAFF"] },
+  { href: "/projects", label: "Projects", icon: FolderKanban, roles: ["ADMIN", "MANAGER", "STAFF"] },
+  { href: "/payments", label: "Payments", icon: CreditCard, roles: ["ADMIN", "MANAGER", "STAFF"] },
+  { href: "/reports", label: "Reports", icon: BarChart3, roles: ["ADMIN", "MANAGER"] },
 ];
+
+const ROLE_COLORS: Record<string, string> = {
+  ADMIN: "bg-red-100 text-red-800",
+  MANAGER: "bg-blue-100 text-blue-800",
+  STAFF: "bg-gray-100 text-gray-800",
+};
 
 export function Sidebar() {
   const pathname = usePathname();
   const { logout, user } = useAuth();
+
+  const visibleItems = navItems.filter(
+    (item) => user && item.roles.includes(user.role)
+  );
 
   return (
     <TooltipProvider>
@@ -46,7 +56,7 @@ export function Sidebar() {
           </div>
 
           <nav className="flex-1 px-3 py-4 space-y-1">
-            {navItems.map((item) => {
+            {visibleItems.map((item) => {
               const isActive =
                 item.href === "/"
                   ? pathname === "/"
@@ -77,8 +87,16 @@ export function Sidebar() {
 
           <div className="p-3 space-y-1">
             {user && (
-              <div className="px-3 py-2 text-xs text-muted-foreground">
-                <p className="font-medium text-foreground truncate">{user.name}</p>
+              <div className="px-3 py-2 text-xs text-muted-foreground space-y-1">
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-foreground truncate">{user.name}</p>
+                  <Badge
+                    variant="secondary"
+                    className={cn("text-[10px] px-1.5 py-0", ROLE_COLORS[user.role])}
+                  >
+                    {user.role}
+                  </Badge>
+                </div>
                 <p className="truncate">{user.email}</p>
               </div>
             )}
