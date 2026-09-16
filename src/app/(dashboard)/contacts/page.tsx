@@ -1,11 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Users, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableHeader,
@@ -15,30 +22,56 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import api from "@/lib/api";
-import { Contact, PaginatedResponse } from "@/types";
 import { formatDate } from "@/lib/utils";
 
+interface ContactWithCompany {
+  id: string;
+  companyId: string;
+  name: string;
+  designation?: string;
+  mobile?: string;
+  email?: string;
+  companyName?: string;
+  createdAt: string;
+}
+
+interface PaginatedResponse {
+  data: ContactWithCompany[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 export default function ContactsPage() {
-  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [contacts, setContacts] = useState<ContactWithCompany[]>([]);
   const [meta, setMeta] = useState({
     page: 1,
-    limit: 10,
+    limit: 20,
     total: 0,
     totalPages: 0,
   });
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(20);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchContacts();
-  }, [page, search]);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
-  const fetchContacts = async () => {
+  const fetchContacts = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await api.get<PaginatedResponse<Contact>>("/contacts", {
-        params: { page, limit: 10, search },
+      const response = await api.get<PaginatedResponse>("/contacts", {
+        params: { page, limit, search: debouncedSearch },
       });
       setContacts(response.data.data);
       setMeta(response.data.meta);
@@ -47,12 +80,11 @@ export default function ContactsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, limit, debouncedSearch]);
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value);
-    setPage(1);
-  };
+  useEffect(() => {
+    fetchContacts();
+  }, [fetchContacts]);
 
   return (
     <div className="space-y-6">
@@ -70,18 +102,38 @@ export default function ContactsPage() {
             <div className="relative flex-1 max-w-sm">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search contacts..."
+                placeholder="Search by name, email, phone, designation, company..."
                 value={search}
-                onChange={handleSearch}
+                onChange={(e) => setSearch(e.target.value)}
                 className="pl-9"
               />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Show:</span>
+              <Select
+                value={String(limit)}
+                onValueChange={(value) => {
+                  setLimit(Number(value));
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="w-[80px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Loading...
+            <div className="flex justify-center py-8">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             </div>
           ) : contacts.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
@@ -105,10 +157,16 @@ export default function ContactsPage() {
                     <TableCell className="font-medium">
                       {contact.name}
                     </TableCell>
-                    <TableCell>{contact.designation || "N/A"}</TableCell>
-                    <TableCell>{contact.mobile || "N/A"}</TableCell>
-                    <TableCell>{contact.email || "N/A"}</TableCell>
-                    <TableCell>N/A</TableCell>
+                    <TableCell>{contact.designation || "—"}</TableCell>
+                    <TableCell>{contact.mobile || "—"}</TableCell>
+                    <TableCell>{contact.email || "—"}</TableCell>
+                    <TableCell>
+                      {contact.companyName ? (
+                        <Badge variant="outline">{contact.companyName}</Badge>
+                      ) : (
+                        "—"
+                      )}
+                    </TableCell>
                     <TableCell>{formatDate(contact.createdAt)}</TableCell>
                   </TableRow>
                 ))}
@@ -119,7 +177,7 @@ export default function ContactsPage() {
           {meta.totalPages > 1 && (
             <div className="flex items-center justify-between mt-4">
               <p className="text-sm text-muted-foreground">
-                Page {meta.page} of {meta.totalPages}
+                Page {meta.page} of {meta.totalPages} ({meta.total} contacts)
               </p>
               <div className="flex gap-2">
                 <Button
