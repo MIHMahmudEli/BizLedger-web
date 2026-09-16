@@ -43,6 +43,24 @@ const PAYMENT_METHODS: { value: PaymentMethod | "ALL"; label: string }[] = [
   { value: "OTHER", label: "Other" },
 ];
 
+const PROJECT_TYPES = [
+  "Web Development",
+  "Mobile App",
+  "Desktop Application",
+  "E-Commerce",
+  "ERP System",
+  "CRM System",
+  "UI/UX Design",
+  "API Development",
+  "Cloud Migration",
+  "DevOps",
+  "Data Analytics",
+  "AI/ML",
+  "Consulting",
+  "Maintenance",
+  "Other",
+];
+
 const METHOD_COLORS: Record<PaymentMethod, string> = {
   CASH: "bg-emerald-100 text-emerald-800",
   BANK_TRANSFER: "bg-blue-100 text-blue-800",
@@ -133,6 +151,8 @@ function OutstandingSection() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [projectType, setProjectType] = useState("");
+  const [projectTypeSearch, setProjectTypeSearch] = useState("");
+  const [projectTypeDropdownOpen, setProjectTypeDropdownOpen] = useState(false);
   const [minDue, setMinDue] = useState("");
   const [maxDue, setMaxDue] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -172,35 +192,57 @@ function OutstandingSection() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-2">
             <Label>Project Type</Label>
-            <Select
-              value={projectType}
-              onValueChange={(value) => {
-                setProjectType(value === "all" ? "" : value);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All Types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="Web Development">Web Development</SelectItem>
-                <SelectItem value="Mobile App">Mobile App</SelectItem>
-                <SelectItem value="Desktop Application">Desktop Application</SelectItem>
-                <SelectItem value="E-Commerce">E-Commerce</SelectItem>
-                <SelectItem value="ERP System">ERP System</SelectItem>
-                <SelectItem value="CRM System">CRM System</SelectItem>
-                <SelectItem value="UI/UX Design">UI/UX Design</SelectItem>
-                <SelectItem value="API Development">API Development</SelectItem>
-                <SelectItem value="Cloud Migration">Cloud Migration</SelectItem>
-                <SelectItem value="DevOps">DevOps</SelectItem>
-                <SelectItem value="Data Analytics">Data Analytics</SelectItem>
-                <SelectItem value="AI/ML">AI/ML</SelectItem>
-                <SelectItem value="Consulting">Consulting</SelectItem>
-                <SelectItem value="Maintenance">Maintenance</SelectItem>
-                <SelectItem value="Other">Other</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="relative">
+              <Input
+                value={projectType || projectTypeSearch}
+                onChange={(e) => {
+                  setProjectTypeSearch(e.target.value);
+                  setProjectTypeDropdownOpen(true);
+                  if (projectType) {
+                    setProjectType("");
+                    setPage(1);
+                  }
+                }}
+                onFocus={() => setProjectTypeDropdownOpen(true)}
+                onBlur={() => setTimeout(() => setProjectTypeDropdownOpen(false), 200)}
+                placeholder="All Types"
+              />
+              {projectTypeDropdownOpen && (
+                <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto">
+                  {!projectTypeSearch && (
+                    <div
+                      className="px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground text-muted-foreground"
+                      onMouseDown={() => {
+                        setProjectType("");
+                        setProjectTypeSearch("");
+                        setProjectTypeDropdownOpen(false);
+                        setPage(1);
+                      }}
+                    >
+                      All Types
+                    </div>
+                  )}
+                  {PROJECT_TYPES.filter((type) =>
+                    type.toLowerCase().includes(projectTypeSearch.toLowerCase())
+                  ).map((type) => (
+                    <div
+                      key={type}
+                      className={`px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground ${
+                        projectType === type ? "bg-accent" : ""
+                      }`}
+                      onMouseDown={() => {
+                        setProjectType(type);
+                        setProjectTypeSearch("");
+                        setProjectTypeDropdownOpen(false);
+                        setPage(1);
+                      }}
+                    >
+                      {type}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="minDue">Min Due</Label>
