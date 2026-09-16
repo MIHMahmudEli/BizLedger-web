@@ -10,6 +10,7 @@ import {
   FolderKanban,
   CreditCard,
   BarChart3,
+  Shield,
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -26,6 +27,7 @@ const navItems = [
   { href: "/projects", label: "Projects", icon: FolderKanban, roles: ["ADMIN", "MANAGER", "STAFF"] },
   { href: "/payments", label: "Payments", icon: CreditCard, roles: ["ADMIN", "MANAGER", "STAFF"] },
   { href: "/reports", label: "Reports", icon: BarChart3, roles: ["ADMIN", "MANAGER"] },
+  { href: "/users", label: "Users", icon: Shield, roles: ["ADMIN"] },
 ];
 
 const ROLE_COLORS: Record<string, string> = {
