@@ -5,6 +5,7 @@ import { Users, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -23,6 +24,25 @@ import {
 } from "@/components/ui/table";
 import api from "@/lib/api";
 import { formatDate } from "@/lib/utils";
+
+const DESIGNATIONS = [
+  "Owner",
+  "Manager",
+  "Director",
+  "CEO",
+  "CTO",
+  "CFO",
+  "Accountant",
+  "HR Manager",
+  "Sales Manager",
+  "Marketing Manager",
+  "Project Manager",
+  "Developer",
+  "Designer",
+  "Consultant",
+  "Assistant",
+  "Other",
+];
 
 interface ContactWithCompany {
   id: string;
@@ -58,6 +78,7 @@ export default function ContactsPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [loading, setLoading] = useState(true);
+  const [filterDesignation, setFilterDesignation] = useState("");
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -70,9 +91,9 @@ export default function ContactsPage() {
   const fetchContacts = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await api.get<PaginatedResponse>("/contacts", {
-        params: { page, limit, search: debouncedSearch },
-      });
+      const params: Record<string, string | number> = { page, limit, search: debouncedSearch };
+      if (filterDesignation) params.designation = filterDesignation;
+      const response = await api.get<PaginatedResponse>("/contacts", { params });
       setContacts(response.data.data);
       setMeta(response.data.meta);
     } catch (error) {
@@ -80,7 +101,7 @@ export default function ContactsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, limit, debouncedSearch]);
+  }, [page, limit, debouncedSearch, filterDesignation]);
 
   useEffect(() => {
     fetchContacts();
@@ -98,35 +119,68 @@ export default function ContactsPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search by name, email, phone, designation, company..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-              />
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-4">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name, email, phone, designation, company..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Show:</span>
+                <Select
+                  value={String(limit)}
+                  onValueChange={(value) => {
+                    setLimit(Number(value));
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-[80px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Show:</span>
+            <div className="flex items-center gap-3 flex-wrap">
               <Select
-                value={String(limit)}
+                value={filterDesignation || "all"}
                 onValueChange={(value) => {
-                  setLimit(Number(value));
+                  setFilterDesignation(value === "all" ? "" : value);
                   setPage(1);
                 }}
               >
-                <SelectTrigger className="w-[80px]">
-                  <SelectValue />
+                <SelectTrigger className="w-44">
+                  <SelectValue placeholder="All Designations" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="20">20</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                  <SelectItem value="100">100</SelectItem>
+                  <SelectItem value="all">All Designations</SelectItem>
+                  {DESIGNATIONS.map((d) => (
+                    <SelectItem key={d} value={d}>{d}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              {filterDesignation && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setFilterDesignation("");
+                    setPage(1);
+                  }}
+                >
+                  Clear Filter
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>

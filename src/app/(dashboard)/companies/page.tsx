@@ -86,6 +86,7 @@ export default function CompaniesPage() {
   const [search, setSearch] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
   const [limit, setLimit] = useState(20);
+  const [filterCategory, setFilterCategory] = useState("");
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
@@ -99,11 +100,12 @@ export default function CompaniesPage() {
   const [categorySearch, setCategorySearch] = useState("");
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
 
-  const fetchCompanies = useCallback(async (page = 1, searchQuery = searchDebounced, limitVal = limit) => {
+  const fetchCompanies = useCallback(async (page = 1, searchQuery = searchDebounced, limitVal = limit, category = filterCategory) => {
     setLoading(true);
     try {
       const params: Record<string, string | number> = { page, limit: limitVal };
       if (searchQuery) params.search = searchQuery;
+      if (category) params.category = category;
       const { data } = await api.get<PaginatedResponse<Company>>("/companies", { params });
       setCompanies(data.data);
       setMeta(data.meta);
@@ -112,7 +114,7 @@ export default function CompaniesPage() {
     } finally {
       setLoading(false);
     }
-  }, [searchDebounced, limit]);
+  }, [searchDebounced, limit, filterCategory]);
 
   useEffect(() => {
     const timer = setTimeout(() => setSearchDebounced(search), 400);
@@ -121,7 +123,7 @@ export default function CompaniesPage() {
 
   useEffect(() => {
     fetchCompanies(1);
-  }, [searchDebounced, limit, fetchCompanies]);
+  }, [searchDebounced, limit, filterCategory, fetchCompanies]);
 
   const handlePageChange = (page: number) => fetchCompanies(page);
 
@@ -212,42 +214,71 @@ export default function CompaniesPage() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Search by name, category, area, website..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
-              />
-              {search && (
-                <button
-                  onClick={() => setSearch("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-4">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name, category, area, website..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9"
+                />
+                {search && (
+                  <button
+                    onClick={() => setSearch("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Show:</span>
+                <Select
+                  value={String(limit)}
+                  onValueChange={(value) => {
+                    setLimit(Number(value));
+                  }}
                 >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
+                  <SelectTrigger className="w-[80px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Show:</span>
+            <div className="flex items-center gap-3 flex-wrap">
               <Select
-                value={String(limit)}
+                value={filterCategory || "all"}
                 onValueChange={(value) => {
-                  setLimit(Number(value));
+                  setFilterCategory(value === "all" ? "" : value);
                 }}
               >
-                <SelectTrigger className="w-[80px]">
-                  <SelectValue />
+                <SelectTrigger className="w-44">
+                  <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="20">20</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                  <SelectItem value="100">100</SelectItem>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {CATEGORIES.map((cat) => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              {filterCategory && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setFilterCategory("")}
+                >
+                  Clear Filter
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
