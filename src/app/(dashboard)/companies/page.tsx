@@ -86,7 +86,14 @@ export default function CompaniesPage() {
   const [search, setSearch] = useState("");
   const [searchDebounced, setSearchDebounced] = useState("");
   const [limit, setLimit] = useState(20);
+
   const [filterCategory, setFilterCategory] = useState("");
+  const [categorySearch, setCategorySearch] = useState("");
+  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+
+  const [filterArea, setFilterArea] = useState("");
+  const [areaSearch, setAreaSearch] = useState("");
+  const [areaDropdownOpen, setAreaDropdownOpen] = useState(false);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingCompany, setEditingCompany] = useState<Company | null>(null);
@@ -97,15 +104,15 @@ export default function CompaniesPage() {
   const [deletingCompany, setDeletingCompany] = useState<Company | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const [categorySearch, setCategorySearch] = useState("");
-  const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+  const uniqueAreas = [...new Set(companies.map((c) => c.addressArea).filter(Boolean))] as string[];
 
-  const fetchCompanies = useCallback(async (page = 1, searchQuery = searchDebounced, limitVal = limit, category = filterCategory) => {
+  const fetchCompanies = useCallback(async (page = 1, searchQuery = searchDebounced, limitVal = limit, category = filterCategory, area = filterArea) => {
     setLoading(true);
     try {
       const params: Record<string, string | number> = { page, limit: limitVal };
       if (searchQuery) params.search = searchQuery;
       if (category) params.category = category;
+      if (area) params.area = area;
       const { data } = await api.get<PaginatedResponse<Company>>("/companies", { params });
       setCompanies(data.data);
       setMeta(data.meta);
@@ -114,7 +121,7 @@ export default function CompaniesPage() {
     } finally {
       setLoading(false);
     }
-  }, [searchDebounced, limit, filterCategory]);
+  }, [searchDebounced, limit, filterCategory, filterArea]);
 
   useEffect(() => {
     const timer = setTimeout(() => setSearchDebounced(search), 400);
@@ -123,7 +130,7 @@ export default function CompaniesPage() {
 
   useEffect(() => {
     fetchCompanies(1);
-  }, [searchDebounced, limit, filterCategory, fetchCompanies]);
+  }, [searchDebounced, limit, filterCategory, filterArea, fetchCompanies]);
 
   const handlePageChange = (page: number) => fetchCompanies(page);
 
@@ -254,29 +261,116 @@ export default function CompaniesPage() {
               </div>
             </div>
             <div className="flex items-center gap-3 flex-wrap">
-              <Select
-                value={filterCategory || "all"}
-                onValueChange={(value) => {
-                  setFilterCategory(value === "all" ? "" : value);
-                }}
-              >
-                <SelectTrigger className="w-44">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  {CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {filterCategory && (
+              <div className="relative">
+                <Input
+                  value={filterCategory || categorySearch}
+                  onChange={(e) => {
+                    setCategorySearch(e.target.value);
+                    setCategoryDropdownOpen(true);
+                    if (filterCategory) {
+                      setFilterCategory("");
+                    }
+                  }}
+                  onFocus={() => setCategoryDropdownOpen(true)}
+                  onBlur={() => setTimeout(() => setCategoryDropdownOpen(false), 200)}
+                  placeholder="Filter by category..."
+                  className="w-48"
+                />
+                {categoryDropdownOpen && (
+                  <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto">
+                    {!categorySearch && !filterCategory && (
+                      <div
+                        className="px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground text-muted-foreground"
+                        onMouseDown={() => {
+                          setFilterCategory("");
+                          setCategorySearch("");
+                          setCategoryDropdownOpen(false);
+                        }}
+                      >
+                        All Categories
+                      </div>
+                    )}
+                    {CATEGORIES.filter((cat) =>
+                      cat.toLowerCase().includes(categorySearch.toLowerCase())
+                    ).map((cat) => (
+                      <div
+                        key={cat}
+                        className={`px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground ${
+                          filterCategory === cat ? "bg-accent" : ""
+                        }`}
+                        onMouseDown={() => {
+                          setFilterCategory(cat);
+                          setCategorySearch("");
+                          setCategoryDropdownOpen(false);
+                        }}
+                      >
+                        {cat}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="relative">
+                <Input
+                  value={filterArea || areaSearch}
+                  onChange={(e) => {
+                    setAreaSearch(e.target.value);
+                    setAreaDropdownOpen(true);
+                    if (filterArea) {
+                      setFilterArea("");
+                    }
+                  }}
+                  onFocus={() => setAreaDropdownOpen(true)}
+                  onBlur={() => setTimeout(() => setAreaDropdownOpen(false), 200)}
+                  placeholder="Filter by area..."
+                  className="w-48"
+                />
+                {areaDropdownOpen && uniqueAreas.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto">
+                    {!areaSearch && !filterArea && (
+                      <div
+                        className="px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground text-muted-foreground"
+                        onMouseDown={() => {
+                          setFilterArea("");
+                          setAreaSearch("");
+                          setAreaDropdownOpen(false);
+                        }}
+                      >
+                        All Areas
+                      </div>
+                    )}
+                    {uniqueAreas.filter((a) =>
+                      a.toLowerCase().includes(areaSearch.toLowerCase())
+                    ).map((a) => (
+                      <div
+                        key={a}
+                        className={`px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground ${
+                          filterArea === a ? "bg-accent" : ""
+                        }`}
+                        onMouseDown={() => {
+                          setFilterArea(a);
+                          setAreaSearch("");
+                          setAreaDropdownOpen(false);
+                        }}
+                      >
+                        {a}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {(filterCategory || filterArea) && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setFilterCategory("")}
+                  onClick={() => {
+                    setFilterCategory("");
+                    setFilterArea("");
+                    setCategorySearch("");
+                    setAreaSearch("");
+                  }}
                 >
-                  Clear Filter
+                  Clear Filters
                 </Button>
               )}
             </div>
