@@ -725,14 +725,33 @@ export default function CompanyDetailPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="project-type">Project Type</Label>
-                <Input
-                  id="project-type"
+                <Select
                   value={projectForm.projectType}
-                  onChange={(e) =>
-                    setProjectForm({ ...projectForm, projectType: e.target.value })
+                  onValueChange={(value) =>
+                    setProjectForm({ ...projectForm, projectType: value })
                   }
-                  placeholder="Web Development"
-                />
+                >
+                  <SelectTrigger id="project-type">
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Web Development">Web Development</SelectItem>
+                    <SelectItem value="Mobile App">Mobile App</SelectItem>
+                    <SelectItem value="Desktop Application">Desktop Application</SelectItem>
+                    <SelectItem value="E-Commerce">E-Commerce</SelectItem>
+                    <SelectItem value="ERP System">ERP System</SelectItem>
+                    <SelectItem value="CRM System">CRM System</SelectItem>
+                    <SelectItem value="UI/UX Design">UI/UX Design</SelectItem>
+                    <SelectItem value="API Development">API Development</SelectItem>
+                    <SelectItem value="Cloud Migration">Cloud Migration</SelectItem>
+                    <SelectItem value="DevOps">DevOps</SelectItem>
+                    <SelectItem value="Data Analytics">Data Analytics</SelectItem>
+                    <SelectItem value="AI/ML">AI/ML</SelectItem>
+                    <SelectItem value="Consulting">Consulting</SelectItem>
+                    <SelectItem value="Maintenance">Maintenance</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
