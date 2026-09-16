@@ -56,6 +56,43 @@ import type { Company, Contact, Project, ProjectStatus } from "@/types";
 
 /* ────────────────────── Forms ────────────────────── */
 
+const DESIGNATIONS = [
+  "Owner",
+  "Manager",
+  "Director",
+  "CEO",
+  "CTO",
+  "CFO",
+  "Accountant",
+  "HR Manager",
+  "Sales Manager",
+  "Marketing Manager",
+  "Project Manager",
+  "Developer",
+  "Designer",
+  "Consultant",
+  "Assistant",
+  "Other",
+];
+
+const PROJECT_TYPES = [
+  "Web Development",
+  "Mobile App",
+  "Desktop Application",
+  "E-Commerce",
+  "ERP System",
+  "CRM System",
+  "UI/UX Design",
+  "API Development",
+  "Cloud Migration",
+  "DevOps",
+  "Data Analytics",
+  "AI/ML",
+  "Consulting",
+  "Maintenance",
+  "Other",
+];
+
 interface ContactForm {
   name: string;
   designation: string;
@@ -154,6 +191,8 @@ export default function CompanyDetailPage() {
   const [deleteContactOpen, setDeleteContactOpen] = useState(false);
   const [deletingContact, setDeletingContact] = useState<Contact | null>(null);
   const [contactDeleting, setContactDeleting] = useState(false);
+  const [designationSearch, setDesignationSearch] = useState("");
+  const [designationDropdownOpen, setDesignationDropdownOpen] = useState(false);
 
   /* Project state */
   const [projectDialogOpen, setProjectDialogOpen] = useState(false);
@@ -163,6 +202,8 @@ export default function CompanyDetailPage() {
   const [deleteProjectOpen, setDeleteProjectOpen] = useState(false);
   const [deletingProject, setDeletingProject] = useState<Project | null>(null);
   const [projectDeleting, setProjectDeleting] = useState(false);
+  const [projectTypeSearch, setProjectTypeSearch] = useState("");
+  const [projectTypeDropdownOpen, setProjectTypeDropdownOpen] = useState(false);
 
   /* ── Fetch ── */
 
@@ -187,6 +228,7 @@ export default function CompanyDetailPage() {
   const openCreateContact = () => {
     setEditingContact(null);
     setContactForm(emptyContactForm);
+    setDesignationSearch("");
     setContactDialogOpen(true);
   };
 
@@ -198,6 +240,7 @@ export default function CompanyDetailPage() {
       mobile: c.mobile ?? "",
       email: c.email ?? "",
     });
+    setDesignationSearch("");
     setContactDialogOpen(true);
   };
 
@@ -250,6 +293,7 @@ export default function CompanyDetailPage() {
   const openCreateProject = () => {
     setEditingProject(null);
     setProjectForm(emptyProjectForm);
+    setProjectTypeSearch("");
     setProjectDialogOpen(true);
   };
 
@@ -264,6 +308,7 @@ export default function CompanyDetailPage() {
       deadline: p.deadline ? p.deadline.slice(0, 10) : "",
       description: p.description ?? "",
     });
+    setProjectTypeSearch("");
     setProjectDialogOpen(true);
   };
 
@@ -603,34 +648,55 @@ export default function CompanyDetailPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="contact-designation">Designation</Label>
-              <Select
-                value={contactForm.designation}
-                onValueChange={(value) =>
-                  setContactForm({ ...contactForm, designation: value })
-                }
-              >
-                <SelectTrigger id="contact-designation">
-                  <SelectValue placeholder="Select designation" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Owner">Owner</SelectItem>
-                  <SelectItem value="Manager">Manager</SelectItem>
-                  <SelectItem value="Director">Director</SelectItem>
-                  <SelectItem value="CEO">CEO</SelectItem>
-                  <SelectItem value="CTO">CTO</SelectItem>
-                  <SelectItem value="CFO">CFO</SelectItem>
-                  <SelectItem value="Accountant">Accountant</SelectItem>
-                  <SelectItem value="HR Manager">HR Manager</SelectItem>
-                  <SelectItem value="Sales Manager">Sales Manager</SelectItem>
-                  <SelectItem value="Marketing Manager">Marketing Manager</SelectItem>
-                  <SelectItem value="Project Manager">Project Manager</SelectItem>
-                  <SelectItem value="Developer">Developer</SelectItem>
-                  <SelectItem value="Designer">Designer</SelectItem>
-                  <SelectItem value="Consultant">Consultant</SelectItem>
-                  <SelectItem value="Assistant">Assistant</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="relative">
+                <Input
+                  id="contact-designation"
+                  value={contactForm.designation || designationSearch}
+                  onChange={(e) => {
+                    setDesignationSearch(e.target.value);
+                    setDesignationDropdownOpen(true);
+                    if (contactForm.designation) {
+                      setContactForm({ ...contactForm, designation: "" });
+                    }
+                  }}
+                  onFocus={() => setDesignationDropdownOpen(true)}
+                  onBlur={() => setTimeout(() => setDesignationDropdownOpen(false), 200)}
+                  placeholder="Select designation"
+                />
+                {designationDropdownOpen && (
+                  <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto">
+                    {!designationSearch && !contactForm.designation && (
+                      <div
+                        className="px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground text-muted-foreground"
+                        onMouseDown={() => {
+                          setContactForm({ ...contactForm, designation: "" });
+                          setDesignationSearch("");
+                          setDesignationDropdownOpen(false);
+                        }}
+                      >
+                        Select designation
+                      </div>
+                    )}
+                    {DESIGNATIONS.filter((d) =>
+                      d.toLowerCase().includes(designationSearch.toLowerCase())
+                    ).map((d) => (
+                      <div
+                        key={d}
+                        className={`px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground ${
+                          contactForm.designation === d ? "bg-accent" : ""
+                        }`}
+                        onMouseDown={() => {
+                          setContactForm({ ...contactForm, designation: d });
+                          setDesignationSearch("");
+                          setDesignationDropdownOpen(false);
+                        }}
+                      >
+                        {d}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="contact-mobile">Mobile</Label>
@@ -725,33 +791,55 @@ export default function CompanyDetailPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="project-type">Project Type</Label>
-                <Select
-                  value={projectForm.projectType}
-                  onValueChange={(value) =>
-                    setProjectForm({ ...projectForm, projectType: value })
-                  }
-                >
-                  <SelectTrigger id="project-type">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Web Development">Web Development</SelectItem>
-                    <SelectItem value="Mobile App">Mobile App</SelectItem>
-                    <SelectItem value="Desktop Application">Desktop Application</SelectItem>
-                    <SelectItem value="E-Commerce">E-Commerce</SelectItem>
-                    <SelectItem value="ERP System">ERP System</SelectItem>
-                    <SelectItem value="CRM System">CRM System</SelectItem>
-                    <SelectItem value="UI/UX Design">UI/UX Design</SelectItem>
-                    <SelectItem value="API Development">API Development</SelectItem>
-                    <SelectItem value="Cloud Migration">Cloud Migration</SelectItem>
-                    <SelectItem value="DevOps">DevOps</SelectItem>
-                    <SelectItem value="Data Analytics">Data Analytics</SelectItem>
-                    <SelectItem value="AI/ML">AI/ML</SelectItem>
-                    <SelectItem value="Consulting">Consulting</SelectItem>
-                    <SelectItem value="Maintenance">Maintenance</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="relative">
+                  <Input
+                    id="project-type"
+                    value={projectForm.projectType || projectTypeSearch}
+                    onChange={(e) => {
+                      setProjectTypeSearch(e.target.value);
+                      setProjectTypeDropdownOpen(true);
+                      if (projectForm.projectType) {
+                        setProjectForm({ ...projectForm, projectType: "" });
+                      }
+                    }}
+                    onFocus={() => setProjectTypeDropdownOpen(true)}
+                    onBlur={() => setTimeout(() => setProjectTypeDropdownOpen(false), 200)}
+                    placeholder="Select type"
+                  />
+                  {projectTypeDropdownOpen && (
+                    <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto">
+                      {!projectTypeSearch && !projectForm.projectType && (
+                        <div
+                          className="px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground text-muted-foreground"
+                          onMouseDown={() => {
+                            setProjectForm({ ...projectForm, projectType: "" });
+                            setProjectTypeSearch("");
+                            setProjectTypeDropdownOpen(false);
+                          }}
+                        >
+                          Select type
+                        </div>
+                      )}
+                      {PROJECT_TYPES.filter((t) =>
+                        t.toLowerCase().includes(projectTypeSearch.toLowerCase())
+                      ).map((t) => (
+                        <div
+                          key={t}
+                          className={`px-3 py-2 cursor-pointer hover:bg-accent hover:text-accent-foreground ${
+                            projectForm.projectType === t ? "bg-accent" : ""
+                          }`}
+                          onMouseDown={() => {
+                            setProjectForm({ ...projectForm, projectType: t });
+                            setProjectTypeSearch("");
+                            setProjectTypeDropdownOpen(false);
+                          }}
+                        >
+                          {t}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
