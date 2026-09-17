@@ -390,28 +390,26 @@ export default function CompanyDetailPage() {
                     subtitle="Basic details about this company"
                     icon={<Building2 className="h-4 w-4 text-primary" />}
                   >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-0">
                       {company.address && (
-                        <div className="flex items-start gap-4">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0">
-                            <MapPin className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                        <div className="flex items-center justify-between py-2.5 border-b border-border/40 last:border-0">
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                            <span className="text-sm text-muted-foreground">Address</span>
                           </div>
-                          <div className="min-w-0">
-                            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Address</p>
-                            <p className="text-sm font-medium leading-relaxed">{company.address}</p>
-                            {company.addressArea && <p className="text-sm text-muted-foreground mt-0.5">{company.addressArea}</p>}
+                          <div className="text-right">
+                            <span className="text-sm font-medium">{company.address}</span>
+                            {company.addressArea && <span className="text-sm text-muted-foreground ml-2">({company.addressArea})</span>}
                           </div>
                         </div>
                       )}
                       {company.category && (
-                        <div className="flex items-start gap-4">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 shrink-0">
-                            <Tag className="h-5 w-5 text-primary" />
+                        <div className="flex items-center justify-between py-2.5 border-b border-border/40 last:border-0">
+                          <div className="flex items-center gap-2">
+                            <Tag className="h-4 w-4 text-primary" />
+                            <span className="text-sm text-muted-foreground">Category</span>
                           </div>
-                          <div className="min-w-0">
-                            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Category</p>
-                            <p className="text-sm font-medium">{company.category}</p>
-                          </div>
+                          <span className="text-sm font-medium">{company.category}</span>
                         </div>
                       )}
                     </div>
