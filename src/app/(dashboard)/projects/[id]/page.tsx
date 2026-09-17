@@ -350,69 +350,106 @@ export default function ProjectDetailPage() {
 
       {/* Company Details Card */}
       {company && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 shrink-0">
-                  <Building2 className="h-5 w-5 text-primary" />
+        <Card className="overflow-hidden">
+          <CardContent className="p-0">
+            {/* Company Header */}
+            <div className="flex items-center justify-between p-5 border-b">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 shrink-0">
+                  <Building2 className="h-6 w-6 text-primary" />
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold">{company.companyName}</h2>
-                  {company.category && <p className="text-sm text-muted-foreground">{company.category}</p>}
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {company.category && (
+                      <Badge variant="secondary" className="font-normal text-xs">{company.category}</Badge>
+                    )}
+                    {company.address && (
+                      <span className="text-sm text-muted-foreground flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        {company.addressArea || company.address}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
-              <Button variant="outline" size="sm" asChild>
-                <a href={`/companies/${company.id}`}>View Company</a>
+              <Button variant="outline" size="sm" asChild className="gap-1.5">
+                <a href={`/companies/${company.id}`}>
+                  View Details
+                  <ArrowLeft className="h-3 w-3 rotate-180" />
+                </a>
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Company Info + Contacts Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x">
               {/* Company Info */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-medium text-muted-foreground">Company Information</h3>
-                <div className="space-y-2">
+              <div className="p-5 space-y-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Information</h3>
+                <div className="space-y-3">
                   {company.address && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <span>{company.address}{company.addressArea ? `, ${company.addressArea}` : ""}</span>
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted shrink-0">
+                        <MapPin className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Address</p>
+                        <p className="text-sm">{company.address}</p>
+                        {company.addressArea && <p className="text-sm text-muted-foreground">{company.addressArea}</p>}
+                      </div>
                     </div>
                   )}
                   {company.website && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <a href={company.website.startsWith("http") ? company.website : `https://${company.website}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{company.website}</a>
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted shrink-0">
+                        <Globe className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Website</p>
+                        <a href={company.website.startsWith("http") ? company.website : `https://${company.website}`} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline break-all">{company.website}</a>
+                      </div>
                     </div>
+                  )}
+                  {!company.address && !company.website && (
+                    <p className="text-sm text-muted-foreground">No additional information</p>
                   )}
                 </div>
               </div>
 
               {/* Contacts */}
-              <div className="space-y-3">
-                <h3 className="text-sm font-medium text-muted-foreground">Contacts</h3>
+              <div className="p-5 space-y-4">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Key Contacts</h3>
                 {contacts.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No contacts found</p>
                 ) : (
                   <div className="space-y-3">
                     {contacts.slice(0, 3).map((contact) => (
-                      <div key={contact.id} className="flex items-start gap-3 p-2 rounded-lg bg-muted/50">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 shrink-0">
+                      <div key={contact.id} className="flex items-start gap-3 p-3 rounded-xl border border-border/50 hover:border-border hover:bg-muted/30 transition-all">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 shrink-0">
                           <User className="h-4 w-4 text-primary" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium">{contact.name}</p>
-                          {contact.designation && <p className="text-xs text-muted-foreground">{contact.designation}</p>}
-                          <div className="flex items-center gap-3 mt-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium">{contact.name}</p>
+                            {contact.designation && (
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-normal">{contact.designation}</Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 mt-1.5">
                             {contact.mobile && (
-                              <a href={`tel:${contact.mobile}`} className="flex items-center gap-1 text-xs text-primary hover:underline">
-                                <Phone className="h-3 w-3" />
+                              <a href={`tel:${contact.mobile}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors">
+                                <div className="flex h-5 w-5 items-center justify-center rounded bg-emerald-500/10">
+                                  <Phone className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
+                                </div>
                                 {contact.mobile}
                               </a>
                             )}
                             {contact.email && (
-                              <a href={`mailto:${contact.email}`} className="flex items-center gap-1 text-xs text-primary hover:underline">
-                                <Mail className="h-3 w-3" />
-                                {contact.email}
+                              <a href={`mailto:${contact.email}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors">
+                                <div className="flex h-5 w-5 items-center justify-center rounded bg-blue-500/10">
+                                  <Mail className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                                </div>
+                                <span className="truncate max-w-[120px]">{contact.email}</span>
                               </a>
                             )}
                           </div>
