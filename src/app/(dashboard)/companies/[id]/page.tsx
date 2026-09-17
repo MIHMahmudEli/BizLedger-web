@@ -160,7 +160,7 @@ function SortableCard({
           <h3 className="text-base font-semibold leading-none">{title}</h3>
           {subtitle && <p className="text-xs text-muted-foreground mt-1.5">{subtitle}</p>}
         </div>
-        <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-2 shrink-0 cursor-pointer" onClick={(e) => e.stopPropagation()}>
           {action}
           <div className="opacity-0 group-hover/section:opacity-60 transition-opacity ml-1">
             <GripVertical className="h-4 w-4 text-muted-foreground" />
