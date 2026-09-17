@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import {
   Bell,
   Check,
@@ -9,9 +8,10 @@ import {
   ChevronLeft,
   ChevronRight,
   CheckCheck,
+  Inbox,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/table";
 import { useNotifications } from "@/lib/notification-context";
 import { formatDate } from "@/lib/utils";
-import type { NotificationType } from "@/types";
 
 const NOTIFICATION_ICONS: Record<string, string> = {
   PAYMENT_RECEIVED: "💰",
@@ -48,6 +47,15 @@ const NOTIFICATION_LABELS: Record<string, string> = {
   USER_CREATED: "User",
   USER_ROLE_CHANGED: "Role Changed",
   DEADLINE_APPROACHING: "Deadline",
+};
+
+const NOTIFICATION_COLORS: Record<string, string> = {
+  PAYMENT_RECEIVED: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
+  PROJECT_CREATED: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  PROJECT_STATUS_CHANGED: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+  USER_CREATED: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+  USER_ROLE_CHANGED: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
+  DEADLINE_APPROACHING: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
 };
 
 export default function NotificationsPage() {
@@ -101,33 +109,28 @@ export default function NotificationsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Bell className="h-6 w-6" />
-          <h1 className="text-2xl font-bold">Notifications</h1>
-          {unreadCount > 0 && (
-            <Badge variant="destructive">{unreadCount} unread</Badge>
-          )}
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Notifications</h1>
+          <p className="text-sm text-muted-foreground">
+            {unreadCount > 0 ? `${unreadCount} unread notifications` : "All caught up!"}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {selectedIds.length > 0 && (
             <>
-              <Button variant="outline" size="sm" onClick={handleBulkMarkAsRead}>
-                <Check className="h-4 w-4 mr-1" />
+              <Button variant="outline" size="sm" onClick={handleBulkMarkAsRead} className="gap-1.5">
+                <Check className="h-4 w-4" />
                 Mark read ({selectedIds.length})
               </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleBulkDelete}
-              >
-                <Trash2 className="h-4 w-4 mr-1" />
+              <Button variant="destructive" size="sm" onClick={handleBulkDelete} className="gap-1.5">
+                <Trash2 className="h-4 w-4" />
                 Delete ({selectedIds.length})
               </Button>
             </>
           )}
           {unreadCount > 0 && (
-            <Button variant="outline" size="sm" onClick={markAllAsRead}>
-              <CheckCheck className="h-4 w-4 mr-1" />
+            <Button variant="outline" size="sm" onClick={markAllAsRead} className="gap-1.5">
+              <CheckCheck className="h-4 w-4" />
               Mark all read
             </Button>
           )}
@@ -135,66 +138,68 @@ export default function NotificationsPage() {
       </div>
 
       <Card>
-        <CardHeader>
-          <div className="flex items-center gap-4 flex-wrap">
-            <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-44">
-                <SelectValue placeholder="All Types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                {Object.entries(NOTIFICATION_LABELS).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filterRead} onValueChange={setFilterRead}>
-              <SelectTrigger className="w-36">
-                <SelectValue placeholder="All" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="unread">Unread</SelectItem>
-                <SelectItem value="read">Read</SelectItem>
-              </SelectContent>
-            </Select>
+        <CardContent className="pt-6">
+          <div className="flex items-end gap-3 mb-6">
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Type</label>
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger className="w-44">
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  {Object.entries(NOTIFICATION_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Status</label>
+              <Select value={filterRead} onValueChange={setFilterRead}>
+                <SelectTrigger className="w-36">
+                  <SelectValue placeholder="All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="unread">Unread</SelectItem>
+                  <SelectItem value="read">Read</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </CardHeader>
-        <CardContent>
+
           {filteredNotifications.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No notifications found
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <Inbox className="h-12 w-12 mb-4 opacity-40" />
+              <p className="text-lg font-medium">No notifications</p>
+              <p className="text-sm mt-1">You're all caught up!</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
+                <TableRow className="hover:bg-transparent">
                   <TableHead className="w-12">
                     <input
                       type="checkbox"
-                      checked={
-                        selectedIds.length === filteredNotifications.length &&
-                        filteredNotifications.length > 0
-                      }
+                      checked={selectedIds.length === filteredNotifications.length && filteredNotifications.length > 0}
                       onChange={toggleSelectAll}
                       className="rounded border-input"
                     />
                   </TableHead>
                   <TableHead className="w-12"></TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Message</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="w-20">Status</TableHead>
-                  <TableHead className="w-20">Actions</TableHead>
+                  <TableHead className="font-semibold">Type</TableHead>
+                  <TableHead className="font-semibold">Message</TableHead>
+                  <TableHead className="font-semibold">Date</TableHead>
+                  <TableHead className="font-semibold">Status</TableHead>
+                  <TableHead className="w-20 font-semibold">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredNotifications.map((notification) => (
                   <TableRow
                     key={notification.id}
-                    className={!notification.isRead ? "bg-muted/30" : ""}
+                    className={`group ${!notification.isRead ? "bg-muted/30" : ""}`}
                   >
                     <TableCell>
                       <input
@@ -208,51 +213,39 @@ export default function NotificationsPage() {
                       {NOTIFICATION_ICONS[notification.type] || "🔔"}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary">
+                      <Badge variant="secondary" className={`${NOTIFICATION_COLORS[notification.type] || ""} font-normal`}>
                         {NOTIFICATION_LABELS[notification.type] || notification.type}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <div>
                         <p className="font-medium">{notification.title}</p>
-                        <p className="text-sm text-muted-foreground line-clamp-1">
+                        <p className="text-sm text-muted-foreground">
                           {notification.message}
                         </p>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {formatDate(notification.createdAt)}
+                    <TableCell>
+                      <span className="text-sm text-muted-foreground">{formatDate(notification.createdAt)}</span>
                     </TableCell>
                     <TableCell>
                       {!notification.isRead ? (
-                        <Badge variant="default" className="text-xs">
-                          Unread
-                        </Badge>
+                        <Badge variant="default" className="text-xs font-normal">Unread</Badge>
                       ) : (
-                        <Badge variant="outline" className="text-xs">
-                          Read
-                        </Badge>
+                        <Badge variant="outline" className="text-xs font-normal">Read</Badge>
                       )}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {!notification.isRead && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 p-0"
-                            onClick={() => markAsRead(notification.id)}
-                          >
-                            <Check className="h-3 w-3" />
+                          <Button variant="ghost" size="icon" className="h-7 w-7"
+                            onClick={() => markAsRead(notification.id)}>
+                            <Check className="h-3.5 w-3.5" />
                           </Button>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 w-7 p-0 text-destructive"
-                          onClick={() => deleteNotification(notification.id)}
-                        >
-                          <Trash2 className="h-3 w-3" />
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive"
+                          onClick={() => deleteNotification(notification.id)}>
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     </TableCell>
@@ -263,28 +256,16 @@ export default function NotificationsPage() {
           )}
 
           {meta.totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4">
+            <div className="flex items-center justify-between mt-4 pt-4 border-t">
               <p className="text-sm text-muted-foreground">
                 Page {meta.page} of {meta.totalPages}
               </p>
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fetchNotifications(meta.page - 1)}
-                  disabled={meta.page === 1}
-                >
-                  <ChevronLeft className="h-4 w-4 mr-1" />
-                  Previous
+                <Button variant="outline" size="sm" onClick={() => fetchNotifications(meta.page - 1)} disabled={meta.page === 1}>
+                  <ChevronLeft className="h-4 w-4 mr-1" />Previous
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => fetchNotifications(meta.page + 1)}
-                  disabled={meta.page === meta.totalPages}
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4 ml-1" />
+                <Button variant="outline" size="sm" onClick={() => fetchNotifications(meta.page + 1)} disabled={meta.page === meta.totalPages}>
+                  Next<ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               </div>
             </div>
