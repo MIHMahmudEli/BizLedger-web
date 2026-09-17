@@ -474,7 +474,7 @@ export default function CompaniesPage() {
                       <span className="text-sm text-muted-foreground">{formatDate(company.createdAt)}</span>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         <Button
                           variant="ghost"
                           size="icon"
@@ -512,12 +512,12 @@ export default function CompaniesPage() {
       </Card>
 
       {meta.totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
             Showing {(meta.page - 1) * meta.limit + 1} to{" "}
             {Math.min(meta.page * meta.limit, meta.total)} of {meta.total}
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap justify-center">
             <Button
               variant="outline"
               size="sm"

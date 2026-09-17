@@ -479,7 +479,7 @@ export default function CompanyDetailPage() {
                                 ) : <span className="text-muted-foreground">-</span>}
                               </TableCell>
                               <TableCell>
-                                <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex items-center justify-end gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditContact(contact)}>
                                     <Edit className="h-4 w-4" />
                                   </Button>

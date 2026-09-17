@@ -237,8 +237,8 @@ export default function PaymentsPage() {
       </Card>
 
       {meta.totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
             Showing {(meta.page - 1) * meta.limit + 1} to {Math.min(meta.page * meta.limit, meta.total)} of {meta.total}
           </p>
           <div className="flex items-center gap-2">
