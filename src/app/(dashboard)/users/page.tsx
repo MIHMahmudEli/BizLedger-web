@@ -1,12 +1,21 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Users, Shield, ArrowUpCircle, ArrowDownCircle, Crown, X } from "lucide-react";
+import { Users, Shield, ArrowUpCircle, ArrowDownCircle, Crown, Plus, Loader2 } from "lucide-react";
 import api from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableHeader,
@@ -45,6 +54,20 @@ const ROLE_ICONS: Record<string, React.ReactNode> = {
   STAFF: <Users className="h-3.5 w-3.5" />,
 };
 
+interface UserForm {
+  name: string;
+  email: string;
+  password: string;
+  role: "ADMIN" | "MANAGER" | "STAFF";
+}
+
+const emptyUserForm: UserForm = {
+  name: "",
+  email: "",
+  password: "",
+  role: "STAFF",
+};
+
 export default function UsersPage() {
   const [users, setUsers] = useState<UserItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,6 +75,11 @@ export default function UsersPage() {
   const [selectedUser, setSelectedUser] = useState<UserItem | null>(null);
   const [newRole, setNewRole] = useState<"MANAGER" | "STAFF">("STAFF");
   const [updating, setUpdating] = useState(false);
+
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [form, setForm] = useState<UserForm>(emptyUserForm);
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState("");
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -87,6 +115,27 @@ export default function UsersPage() {
     }
   };
 
+  const openCreateDialog = () => {
+    setForm(emptyUserForm);
+    setError("");
+    setCreateDialogOpen(true);
+  };
+
+  const handleCreateUser = async () => {
+    if (!form.name.trim() || !form.email.trim() || !form.password.trim()) return;
+    setCreating(true);
+    setError("");
+    try {
+      await api.post("/users", form);
+      setCreateDialogOpen(false);
+      fetchUsers();
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Failed to create user");
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const roleCounts = {
     ADMIN: users.filter((u) => u.role === "ADMIN").length,
     MANAGER: users.filter((u) => u.role === "MANAGER").length,
@@ -100,7 +149,13 @@ export default function UsersPage() {
           <h1 className="text-2xl font-bold tracking-tight">Users</h1>
           <p className="text-sm text-muted-foreground">Manage user roles and permissions</p>
         </div>
-        <Badge variant="secondary" className="text-sm px-3 py-1">{users.length} users</Badge>
+        <div className="flex items-center gap-3">
+          <Badge variant="secondary" className="text-sm px-3 py-1">{users.length} users</Badge>
+          <Button onClick={openCreateDialog} className="gap-1.5">
+            <Plus className="h-4 w-4" />
+            Add User
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -211,6 +266,78 @@ export default function UsersPage() {
         </CardContent>
       </Card>
 
+      {/* Create User Dialog */}
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New User</DialogTitle>
+            <DialogDescription>
+              Add a new user to the system. They will receive their credentials via email.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {error && (
+              <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+                {error}
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="user-name">Full Name *</Label>
+              <Input
+                id="user-name"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="John Doe"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="user-email">Email *</Label>
+              <Input
+                id="user-email"
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                placeholder="john@bizledger.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="user-password">Password *</Label>
+              <Input
+                id="user-password"
+                type="password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                placeholder="Min 6 characters"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Role *</Label>
+              <Select value={form.role} onValueChange={(value) => setForm({ ...form, role: value as UserForm["role"] })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="STAFF">Staff</SelectItem>
+                  <SelectItem value="MANAGER">Manager</SelectItem>
+                  <SelectItem value="ADMIN">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>Cancel</Button>
+            <Button
+              onClick={handleCreateUser}
+              disabled={creating || !form.name.trim() || !form.email.trim() || !form.password.trim()}
+            >
+              {creating && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Create User
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Role Change Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
