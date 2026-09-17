@@ -315,13 +315,13 @@ export default function CompanyDetailPage() {
                 {company.companyName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
               </span>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">{company.companyName}</h1>
-              <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight break-words">{company.companyName}</h1>
+              <div className="flex items-center gap-2 sm:gap-3 mt-1.5 text-sm text-muted-foreground flex-wrap">
                 {company.category && <Badge variant="secondary" className="font-normal">{company.category}</Badge>}
-                {company.addressArea && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{company.addressArea}</span>}
+                {company.addressArea && <span className="flex items-center gap-1 text-xs sm:text-sm"><MapPin className="h-3.5 w-3.5" />{company.addressArea}</span>}
                 {company.website && (
-                  <a href={company.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary hover:underline">
+                  <a href={company.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs sm:text-sm text-primary hover:underline">
                     <Globe className="h-3.5 w-3.5" />Website
                   </a>
                 )}

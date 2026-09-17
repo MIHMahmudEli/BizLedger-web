@@ -131,12 +131,12 @@ export default function ContactsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Contacts</h1>
           <p className="text-sm text-muted-foreground">Manage your business contacts and team members</p>
         </div>
-        <Badge variant="secondary" className="text-sm px-3 py-1">{meta.total} contacts</Badge>
+        <Badge variant="secondary" className="text-sm px-3 py-1 w-fit">{meta.total} contacts</Badge>
       </div>
 
       <div className="flex flex-col gap-4">

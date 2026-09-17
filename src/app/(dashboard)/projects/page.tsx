@@ -288,12 +288,12 @@ function ProjectsContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Projects</h1>
           <p className="text-sm text-muted-foreground">Track and manage your business projects</p>
         </div>
-        <Button onClick={openAddDialog} className="gap-2">
+        <Button onClick={openAddDialog} className="gap-2 w-full sm:w-auto">
           <Plus className="h-4 w-4" />
           Add Project
         </Button>
@@ -301,13 +301,13 @@ function ProjectsContent() {
 
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-3 flex-wrap">
-          <div className="relative flex-1 min-w-[280px] max-w-md">
+          <div className="relative flex-1 min-w-[240px] sm:min-w-[280px] max-w-md w-full">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Search projects..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 pr-9"
+              className="pl-9 pr-9 w-full"
             />
             {search && (
               <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">

@@ -68,7 +68,12 @@ const themeOptions = [
   { value: "system", icon: Monitor, label: "System" },
 ] as const;
 
-export function Sidebar() {
+interface SidebarProps {
+  className?: string;
+  onNavigate?: () => void;
+}
+
+export function Sidebar({ className, onNavigate }: SidebarProps = {}) {
   const pathname = usePathname();
   const { logout, user } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -83,11 +88,11 @@ export function Sidebar() {
 
   return (
     <TooltipProvider>
-      <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 border-r bg-sidebar">
+      <aside className={cn("flex flex-col h-full border-r bg-sidebar", className)}>
         <div className="flex flex-col flex-1 min-h-0">
           {/* Logo */}
           <div className="flex items-center h-16 px-5 border-b">
-            <Link href="/" className="flex items-center gap-2.5 group">
+            <Link href="/" onClick={onNavigate} className="flex items-center gap-2.5 group">
               <div className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
                 <span className="text-primary-foreground font-bold text-sm tracking-tight">BL</span>
               </div>
@@ -116,6 +121,7 @@ export function Sidebar() {
                         <TooltipTrigger asChild>
                           <Link
                             href={item.href}
+                            onClick={onNavigate}
                             className={cn(
                               "relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
                               isActive

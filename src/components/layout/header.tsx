@@ -42,10 +42,8 @@ export function Header() {
             <span className="sr-only">Toggle menu</span>
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-64 p-0">
-          <div onClick={() => setOpen(false)}>
-            <Sidebar />
-          </div>
+        <SheetContent side="left" className="w-72 p-0 border-r">
+          <Sidebar className="w-full border-r-0" onNavigate={() => setOpen(false)} />
         </SheetContent>
       </Sheet>
       <div className="flex-1" />

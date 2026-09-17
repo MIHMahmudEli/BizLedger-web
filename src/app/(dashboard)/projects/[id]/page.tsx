@@ -341,11 +341,11 @@ export default function ProjectDetailPage() {
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 shrink-0">
               <FileText className="h-5 w-5 text-primary" />
             </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">{project.projectName}</h1>
-              <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
-                {project.projectType && <span>{project.projectType}</span>}
-                <Badge variant="secondary" className={`${PROJECT_STATUS_COLORS[project.status]} font-normal gap-1`}>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight break-words">{project.projectName}</h1>
+              <div className="flex items-center gap-2 sm:gap-3 mt-1.5 text-sm text-muted-foreground flex-wrap">
+                {project.projectType && <span className="text-xs sm:text-sm">{project.projectType}</span>}
+                <Badge variant="secondary" className={`${PROJECT_STATUS_COLORS[project.status]} font-normal gap-1 text-xs`}>
                   {PROJECT_STATUS_ICONS[project.status]}
                   {PROJECT_STATUS_LABELS[project.status]}
                 </Badge>

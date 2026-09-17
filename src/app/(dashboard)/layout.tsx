@@ -44,10 +44,10 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <NotificationProvider>
       <div className="min-h-screen">
-        <Sidebar />
-        <div className="md:pl-64">
+        <Sidebar className="hidden md:flex md:w-64 md:fixed md:inset-y-0" />
+        <div className="md:pl-64 flex flex-col min-w-0">
           <Header />
-          <main className="p-4 md:p-6 lg:p-8">{children}</main>
+          <main className="p-3.5 sm:p-6 lg:p-8 max-w-full overflow-x-hidden">{children}</main>
         </div>
       </div>
     </NotificationProvider>

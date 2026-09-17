@@ -156,7 +156,7 @@ function OutstandingSection() {
   return (
     <Card>
       <CardContent className="pt-6">
-        <div className="flex items-end gap-3 mb-6">
+        <div className="flex items-end gap-3 mb-6 flex-wrap">
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground">Type</label>
             <div className="relative">
@@ -336,7 +336,7 @@ function PaymentReportSection() {
   return (
     <Card>
       <CardContent className="pt-6">
-        <div className="flex items-end gap-3 mb-6">
+        <div className="flex items-end gap-3 mb-6 flex-wrap">
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground">From</label>
             <div className="relative">

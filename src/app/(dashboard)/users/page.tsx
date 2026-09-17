@@ -177,12 +177,12 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Users</h1>
           <p className="text-sm text-muted-foreground">Manage user roles and permissions</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
           <Badge variant="secondary" className="text-sm px-3 py-1">{users.length} users</Badge>
           <Button onClick={openCreateDialog} className="gap-1.5">
             <Plus className="h-4 w-4" />
