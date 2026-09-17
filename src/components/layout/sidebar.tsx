@@ -21,26 +21,45 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { useNotifications } from "@/lib/notification-context";
-import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
-const navItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard, roles: ["ADMIN", "MANAGER"] },
-  { href: "/companies", label: "Companies", icon: Building2, roles: ["ADMIN", "MANAGER", "STAFF"] },
-  { href: "/contacts", label: "Contacts", icon: Users, roles: ["ADMIN", "MANAGER", "STAFF"] },
-  { href: "/projects", label: "Projects", icon: FolderKanban, roles: ["ADMIN", "MANAGER", "STAFF"] },
-  { href: "/payments", label: "Payments", icon: CreditCard, roles: ["ADMIN", "MANAGER", "STAFF"] },
-  { href: "/reports", label: "Reports", icon: BarChart3, roles: ["ADMIN", "MANAGER"] },
-  { href: "/notifications", label: "Notifications", icon: Bell, roles: ["ADMIN", "MANAGER", "STAFF"] },
-  { href: "/users", label: "Users", icon: Shield, roles: ["ADMIN"] },
+const navGroups = [
+  {
+    label: "Overview",
+    items: [
+      { href: "/", label: "Dashboard", icon: LayoutDashboard, roles: ["ADMIN", "MANAGER"] },
+    ],
+  },
+  {
+    label: "Management",
+    items: [
+      { href: "/companies", label: "Companies", icon: Building2, roles: ["ADMIN", "MANAGER", "STAFF"] },
+      { href: "/contacts", label: "Contacts", icon: Users, roles: ["ADMIN", "MANAGER", "STAFF"] },
+      { href: "/projects", label: "Projects", icon: FolderKanban, roles: ["ADMIN", "MANAGER", "STAFF"] },
+      { href: "/payments", label: "Payments", icon: CreditCard, roles: ["ADMIN", "MANAGER", "STAFF"] },
+    ],
+  },
+  {
+    label: "Insights",
+    items: [
+      { href: "/reports", label: "Reports", icon: BarChart3, roles: ["ADMIN", "MANAGER"] },
+      { href: "/notifications", label: "Notifications", icon: Bell, roles: ["ADMIN", "MANAGER", "STAFF"] },
+    ],
+  },
+  {
+    label: "Administration",
+    items: [
+      { href: "/users", label: "Users", icon: Shield, roles: ["ADMIN"] },
+    ],
+  },
 ];
 
 const ROLE_COLORS: Record<string, string> = {
-  ADMIN: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-  MANAGER: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-  STAFF: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
+  ADMIN: "bg-red-500/10 text-red-600 dark:text-red-400",
+  MANAGER: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+  STAFF: "bg-gray-500/10 text-gray-600 dark:text-gray-400",
 };
 
 const themeOptions = [
@@ -55,105 +74,143 @@ export function Sidebar() {
   const { theme, setTheme } = useTheme();
   const { unreadCount } = useNotifications();
 
-  const visibleItems = navItems.filter(
-    (item) => user && item.roles.includes(user.role)
-  );
+  const visibleGroups = navGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => user && item.roles.includes(user.role)),
+    }))
+    .filter((group) => group.items.length > 0);
 
   return (
     <TooltipProvider>
       <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 border-r bg-sidebar">
         <div className="flex flex-col flex-1 min-h-0">
-          <div className="flex items-center h-16 px-6 border-b">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">BL</span>
+          {/* Logo */}
+          <div className="flex items-center h-16 px-5 border-b">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
+                <span className="text-primary-foreground font-bold text-sm tracking-tight">BL</span>
               </div>
-              <span className="font-semibold text-lg">BizLedger</span>
+              <div className="flex flex-col">
+                <span className="font-bold text-base leading-tight tracking-tight">BizLedger</span>
+                <span className="text-[10px] text-muted-foreground leading-tight">Business Suite</span>
+              </div>
             </Link>
           </div>
 
-          <nav className="flex-1 px-3 py-4 space-y-1">
-            {visibleItems.map((item) => {
-              const isActive =
-                item.href === "/"
-                  ? pathname === "/"
-                  : pathname.startsWith(item.href);
-              return (
-                <Tooltip key={item.href}>
-                  <TooltipTrigger asChild>
-                    <Link
-                      href={item.href}
-                      className={cn(
-                        "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                        isActive
-                          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
-                      )}
-                    >
-                      <item.icon className="h-4 w-4 shrink-0" />
-                      {item.label}
-                      {item.href === "/notifications" && unreadCount > 0 && (
-                        <Badge
-                          variant="destructive"
-                          className="ml-auto h-5 min-w-5 flex items-center justify-center p-0 text-xs"
-                        >
-                          {unreadCount > 99 ? "99+" : unreadCount}
-                        </Badge>
-                      )}
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">{item.label}</TooltipContent>
-                </Tooltip>
-              );
-            })}
+          {/* Navigation */}
+          <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-5">
+            {visibleGroups.map((group) => (
+              <div key={group.label}>
+                <p className="px-3 mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                  {group.label}
+                </p>
+                <div className="space-y-0.5">
+                  {group.items.map((item) => {
+                    const isActive =
+                      item.href === "/"
+                        ? pathname === "/"
+                        : pathname.startsWith(item.href);
+                    return (
+                      <Tooltip key={item.href}>
+                        <TooltipTrigger asChild>
+                          <Link
+                            href={item.href}
+                            className={cn(
+                              "relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
+                              isActive
+                                ? "bg-primary/10 text-primary"
+                                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                            )}
+                          >
+                            {isActive && (
+                              <div className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-full bg-primary" />
+                            )}
+                            <item.icon className={cn("h-4 w-4 shrink-0", isActive && "text-primary")} />
+                            {item.label}
+                            {item.href === "/notifications" && unreadCount > 0 && (
+                              <Badge
+                                variant="destructive"
+                                className="ml-auto h-5 min-w-5 flex items-center justify-center p-0 text-[10px] font-bold"
+                              >
+                                {unreadCount > 99 ? "99+" : unreadCount}
+                              </Badge>
+                            )}
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">{item.label}</TooltipContent>
+                      </Tooltip>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </nav>
 
-          <Separator />
-
-          <div className="p-3 space-y-2">
-            <div className="flex items-center justify-center gap-1 p-1 bg-muted rounded-lg">
-              {themeOptions.map(({ value, icon: Icon, label }) => (
-                <Tooltip key={value}>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={theme === value ? "default" : "ghost"}
-                      size="sm"
-                      className={cn(
-                        "h-8 w-8 p-0",
-                        theme === value && "shadow-sm"
-                      )}
-                      onClick={() => setTheme(value)}
-                    >
-                      <Icon className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>{label}</TooltipContent>
-                </Tooltip>
-              ))}
+          {/* Bottom Section */}
+          <div className="border-t">
+            {/* Theme Toggle */}
+            <div className="px-3 pt-3 pb-2">
+              <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
+                {themeOptions.map(({ value, icon: Icon, label }) => (
+                  <Tooltip key={value}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={cn(
+                          "h-8 flex-1 p-0 rounded-md transition-all duration-200",
+                          theme === value
+                            ? "bg-background shadow-sm text-foreground"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                        onClick={() => setTheme(value)}
+                      >
+                        <Icon className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{label}</TooltipContent>
+                  </Tooltip>
+                ))}
+              </div>
             </div>
 
+            {/* User Profile */}
             {user && (
-              <div className="px-3 py-2 text-xs text-muted-foreground space-y-1">
-                <div className="flex items-center gap-2">
-                  <p className="font-medium text-foreground truncate">{user.name}</p>
-                  <Badge
-                    variant="secondary"
-                    className={cn("text-[10px] px-1.5 py-0", ROLE_COLORS[user.role])}
-                  >
-                    {user.role}
-                  </Badge>
+              <div className="px-3 pb-2">
+                <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-muted/50">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 shrink-0">
+                    <span className="text-xs font-bold text-primary">
+                      {user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm font-semibold leading-tight truncate">{user.name}</p>
+                      <Badge
+                        variant="secondary"
+                        className={cn("text-[9px] px-1.5 py-0 font-bold leading-none", ROLE_COLORS[user.role])}
+                      >
+                        {user.role}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground truncate mt-0.5">{user.email}</p>
+                  </div>
                 </div>
-                <p className="truncate">{user.email}</p>
               </div>
             )}
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 text-muted-foreground"
-              onClick={logout}
-            >
-              <LogOut className="h-4 w-4" />
-              Log out
-            </Button>
+
+            {/* Logout */}
+            <div className="px-3 pb-3">
+              <Button
+                variant="ghost"
+                className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                onClick={logout}
+              >
+                <LogOut className="h-4 w-4" />
+                Log out
+              </Button>
+            </div>
           </div>
         </div>
       </aside>
