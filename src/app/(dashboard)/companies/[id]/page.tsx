@@ -331,7 +331,7 @@ export default function CompanyDetailPage() {
             <h2 className="text-lg font-semibold">Company Information</h2>
             <p className="text-sm text-muted-foreground">Basic details about this company</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x">
+          <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x">
             {company.category && (
               <div className="p-5 flex items-start gap-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 shrink-0">
@@ -352,17 +352,6 @@ export default function CompanyDetailPage() {
                   <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Address</p>
                   <p className="text-sm font-medium leading-relaxed">{company.address}</p>
                   {company.addressArea && <p className="text-sm text-muted-foreground mt-0.5">{company.addressArea}</p>}
-                </div>
-              </div>
-            )}
-            {company.website && (
-              <div className="p-5 flex items-start gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 shrink-0">
-                  <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Website</p>
-                  <p className="text-sm font-medium break-all">{company.website}</p>
                 </div>
               </div>
             )}
