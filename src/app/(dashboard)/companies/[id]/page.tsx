@@ -325,41 +325,44 @@ export default function CompanyDetailPage() {
       </div>
 
       {/* Company Info */}
-      <Card>
-        <CardContent className="pt-6">
-          <h2 className="text-lg font-semibold mb-4">Company Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <Card className="overflow-hidden">
+        <CardContent className="p-0">
+          <div className="p-5 border-b">
+            <h2 className="text-lg font-semibold">Company Information</h2>
+            <p className="text-sm text-muted-foreground">Basic details about this company</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x">
             {company.category && (
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 shrink-0">
-                  <Tag className="h-4 w-4 text-primary" />
+              <div className="p-5 flex items-start gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 shrink-0">
+                  <Tag className="h-5 w-5 text-primary" />
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Category</p>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Category</p>
                   <p className="text-sm font-medium">{company.category}</p>
                 </div>
               </div>
             )}
             {company.address && (
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 shrink-0">
-                  <MapPin className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+              <div className="p-5 flex items-start gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0">
+                  <MapPin className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Address</p>
-                  <p className="text-sm font-medium">{company.address}</p>
-                  {company.addressArea && <p className="text-xs text-muted-foreground">{company.addressArea}</p>}
+                <div className="min-w-0">
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Address</p>
+                  <p className="text-sm font-medium leading-relaxed">{company.address}</p>
+                  {company.addressArea && <p className="text-sm text-muted-foreground mt-0.5">{company.addressArea}</p>}
                 </div>
               </div>
             )}
             {company.website && (
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10 shrink-0">
-                  <Globe className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+              <div className="p-5 flex items-start gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 shrink-0">
+                  <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Website</p>
-                  <a href={company.website.startsWith("http") ? company.website : `https://${company.website}`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:underline">{company.website}</a>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Website</p>
+                  <a href={company.website.startsWith("http") ? company.website : `https://${company.website}`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:underline break-all">{company.website}</a>
                 </div>
               </div>
             )}
