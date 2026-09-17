@@ -210,3 +210,14 @@ input:focus, textarea:focus, select:focus {
     height: 0;
   }
 }
+
+/* Sortable Swap Animation */
+.sortable-swap {
+  transition: transform 300ms cubic-bezier(0.25, 1, 0.5, 1), opacity 300ms ease;
+}
+.sortable-swap.dragging {
+  transition: transform 200ms ease, opacity 200ms ease;
+}
+.sortable-grid {
+  transition: gap 300ms ease;
+}

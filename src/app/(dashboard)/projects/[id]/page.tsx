@@ -137,11 +137,11 @@ const SECTION_LABELS: Record<SectionId | BottomSectionId, string> = {
   payments: "Payments",
 };
 
-function SortableCard({ id, children }: { id: SectionId; children: React.ReactNode }) {
+function SortableCard({ id, children }: { id: SectionId | BottomSectionId; children: React.ReactNode }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: transition || "transform 250ms cubic-bezier(0.25, 1, 0.5, 1)",
     opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 50 : "auto" as const,
   };
@@ -449,7 +449,7 @@ export default function ProjectDetailPage() {
       {/* Project Details + Financial - Draggable */}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={sectionOrder} strategy={verticalListSortingStrategy}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sortable-grid">
             {sectionOrder.map((sectionId) => {
               if (sectionId === "project-details") {
                 return (
