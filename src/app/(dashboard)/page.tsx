@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import api from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
@@ -97,114 +98,138 @@ export default function DashboardPage() {
 
       {/* Primary Stats */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        <Card className="hover:shadow-md transition-shadow">
-          <CardContent className="pt-5 pb-5 px-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 shrink-0">
-                <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+        <Link href="/companies">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+            <CardContent className="pt-5 pb-5 px-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 shrink-0 group-hover:bg-blue-500/20 transition-colors">
+                  <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground">Companies</p>
+                  <p className="text-2xl font-bold">{report.totalCompanies}</p>
+                </div>
+                <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs text-muted-foreground">Companies</p>
-                <p className="text-2xl font-bold">{report.totalCompanies}</p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/projects">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+            <CardContent className="pt-5 pb-5 px-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-500/10 shrink-0 group-hover:bg-violet-500/20 transition-colors">
+                  <FolderKanban className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground">Projects</p>
+                  <p className="text-2xl font-bold">{report.totalProjects}</p>
+                </div>
+                <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-md transition-shadow">
-          <CardContent className="pt-5 pb-5 px-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-500/10 shrink-0">
-                <FolderKanban className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/reports">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+            <CardContent className="pt-5 pb-5 px-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0 group-hover:bg-emerald-500/20 transition-colors">
+                  <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground">Total Value</p>
+                  <p className="text-base lg:text-lg font-bold break-words">{formatCurrency(report.totalProjectValue)}</p>
+                </div>
+                <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs text-muted-foreground">Projects</p>
-                <p className="text-2xl font-bold">{report.totalProjects}</p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/reports">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+            <CardContent className="pt-5 pb-5 px-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-500/10 shrink-0 group-hover:bg-red-500/20 transition-colors">
+                  <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground">Total Due</p>
+                  <p className="text-base lg:text-lg font-bold text-red-600 dark:text-red-400 break-words">{formatCurrency(report.totalDue)}</p>
+                </div>
+                <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-md transition-shadow">
-          <CardContent className="pt-5 pb-5 px-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0">
-                <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs text-muted-foreground">Total Value</p>
-                <p className="text-base lg:text-lg font-bold break-words">{formatCurrency(report.totalProjectValue)}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-md transition-shadow">
-          <CardContent className="pt-5 pb-5 px-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-500/10 shrink-0">
-                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs text-muted-foreground">Total Due</p>
-                <p className="text-base lg:text-lg font-bold text-red-600 dark:text-red-400 break-words">{formatCurrency(report.totalDue)}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       {/* Secondary Stats */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        <Card className="hover:shadow-md transition-shadow">
-          <CardContent className="pt-5 pb-5 px-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0">
-                <Wallet className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+        <Link href="/reports">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+            <CardContent className="pt-5 pb-5 px-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0 group-hover:bg-emerald-500/20 transition-colors">
+                  <Wallet className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground">Total Paid</p>
+                  <p className="text-base lg:text-lg font-bold text-emerald-600 dark:text-emerald-400 break-words">{formatCurrency(report.totalPaid)}</p>
+                </div>
+                <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs text-muted-foreground">Total Paid</p>
-                <p className="text-base lg:text-lg font-bold text-emerald-600 dark:text-emerald-400 break-words">{formatCurrency(report.totalPaid)}</p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/projects?status=IN_PROGRESS">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+            <CardContent className="pt-5 pb-5 px-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-500/10 shrink-0 group-hover:bg-violet-500/20 transition-colors">
+                  <Clock className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground">Active</p>
+                  <p className="text-2xl font-bold">{report.activeProjects}</p>
+                </div>
+                <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-md transition-shadow">
-          <CardContent className="pt-5 pb-5 px-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-500/10 shrink-0">
-                <Clock className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/projects?status=COMPLETED">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+            <CardContent className="pt-5 pb-5 px-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0 group-hover:bg-emerald-500/20 transition-colors">
+                  <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground">Completed</p>
+                  <p className="text-2xl font-bold">{report.completedProjects}</p>
+                </div>
+                <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Active</p>
-                <p className="text-2xl font-bold">{report.activeProjects}</p>
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/reports">
+          <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+            <CardContent className="pt-5 pb-5 px-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 shrink-0 group-hover:bg-blue-500/20 transition-colors">
+                  <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground">Collection Rate</p>
+                  <p className="text-2xl font-bold">{collectionRate}%</p>
+                </div>
+                <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-md transition-shadow">
-          <CardContent className="pt-5 pb-5 px-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0">
-                <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Completed</p>
-                <p className="text-2xl font-bold">{report.completedProjects}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-md transition-shadow">
-          <CardContent className="pt-5 pb-5 px-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 shrink-0">
-                <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs text-muted-foreground">Collection Rate</p>
-                <p className="text-2xl font-bold">{collectionRate}%</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       {/* Payment Status Cards */}
@@ -215,19 +240,21 @@ export default function DashboardPage() {
             : key === "PAID" ? report.paidProjects
             : report.overpaidProjects;
           return (
-            <Card key={key} className="hover:shadow-md transition-shadow">
-              <CardContent className="pt-5 pb-5 px-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-muted-foreground">{label}</p>
-                    <p className={`text-2xl font-bold ${textColor}`}>{count}</p>
+            <Link key={key} href={`/projects?paymentStatus=${key}`}>
+              <Card className="hover:shadow-md transition-shadow cursor-pointer group">
+                <CardContent className="pt-5 pb-5 px-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-muted-foreground">{label}</p>
+                      <p className={`text-2xl font-bold ${textColor}`}>{count}</p>
+                    </div>
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${bgColor} group-hover:scale-110 transition-transform`}>
+                      <div className={`h-3 w-3 rounded-full ${color}`} />
+                    </div>
                   </div>
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${bgColor}`}>
-                    <div className={`h-3 w-3 rounded-full ${color}`} />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Link>
           );
         })}
       </div>

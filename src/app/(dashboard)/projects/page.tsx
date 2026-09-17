@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   FolderOpen,
   Search,
@@ -132,7 +133,8 @@ const initialForm: ProjectForm = {
   description: "",
 };
 
-export default function ProjectsPage() {
+function ProjectsContent() {
+  const searchParams = useSearchParams();
   const [projects, setProjects] = useState<ProjectRow[]>([]);
   const [meta, setMeta] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
   const [search, setSearch] = useState("");
@@ -141,9 +143,9 @@ export default function ProjectsPage() {
   const [limit, setLimit] = useState(20);
   const [loading, setLoading] = useState(true);
 
-  const [filterType, setFilterType] = useState("");
-  const [filterStatus, setFilterStatus] = useState("");
-  const [filterPaymentStatus, setFilterPaymentStatus] = useState("");
+  const [filterType, setFilterType] = useState(searchParams.get("type") || "");
+  const [filterStatus, setFilterStatus] = useState(searchParams.get("status") || "");
+  const [filterPaymentStatus, setFilterPaymentStatus] = useState(searchParams.get("paymentStatus") || "");
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -604,5 +606,17 @@ export default function ProjectsPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function ProjectsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center h-64">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    }>
+      <ProjectsContent />
+    </Suspense>
   );
 }
