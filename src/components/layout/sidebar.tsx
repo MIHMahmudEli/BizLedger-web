@@ -159,7 +159,7 @@ export function Sidebar() {
                         variant="ghost"
                         size="sm"
                         className={cn(
-                          "h-8 flex-1 p-0 rounded-md transition-all duration-200",
+                          "h-8 flex-1 p-0 rounded-md transition-all duration-200 cursor-pointer",
                           theme === value
                             ? "bg-background shadow-sm text-foreground"
                             : "text-muted-foreground hover:text-foreground"
