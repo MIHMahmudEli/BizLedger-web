@@ -121,6 +121,13 @@
   body {
     @apply bg-background text-foreground;
   }
+  html, body, * {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  html::-webkit-scrollbar, body::-webkit-scrollbar, *::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 .scrollbar-hidden {
