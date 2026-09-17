@@ -10,6 +10,7 @@ import {
   ExternalLink,
   FileText,
   Globe,
+  Building2,
   Inbox,
   GripVertical,
   Mail,
