@@ -127,9 +127,10 @@ const initialPaymentForm: PaymentForm = {
   amount: "", paymentDate: new Date().toISOString().split("T")[0], paymentMethod: "CASH", reference: "", note: "",
 };
 
-type SectionId = "project-details" | "financial" | "company" | "payments";
+type SectionId = "project-details" | "financial";
+type BottomSectionId = "company" | "payments";
 
-const SECTION_LABELS: Record<SectionId, string> = {
+const SECTION_LABELS: Record<SectionId | BottomSectionId, string> = {
   "project-details": "Project Details",
   financial: "Financial Summary",
   company: "Company",
@@ -174,7 +175,8 @@ export default function ProjectDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [company, setCompany] = useState<Company | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [sectionOrder, setSectionOrder] = useState<SectionId[]>(["project-details", "financial", "company", "payments"]);
+  const [sectionOrder, setSectionOrder] = useState<SectionId[]>(["project-details", "financial"]);
+  const [bottomSectionOrder, setBottomSectionOrder] = useState<BottomSectionId[]>(["company", "payments"]);
 
   useEffect(() => { fetchProject(); fetchPayments(); }, [projectId]);
 
@@ -182,6 +184,10 @@ export default function ProjectDetailPage() {
     const saved = localStorage.getItem(`project-section-order-${projectId}`);
     if (saved) {
       try { setSectionOrder(JSON.parse(saved)); } catch {}
+    }
+    const savedBottom = localStorage.getItem(`project-bottom-section-order-${projectId}`);
+    if (savedBottom) {
+      try { setBottomSectionOrder(JSON.parse(savedBottom)); } catch {}
     }
   }, [projectId]);
 
@@ -196,9 +202,22 @@ export default function ProjectDetailPage() {
       setSectionOrder((items) => {
         const oldIndex = items.indexOf(active.id as SectionId);
         const newIndex = items.indexOf(over.id as SectionId);
-        const newOrder = arrayMove(items, oldIndex, newIndex);
-        localStorage.setItem(`project-section-order-${projectId}`, JSON.stringify(newOrder));
-        return newOrder;
+        if (oldIndex !== -1 && newIndex !== -1) {
+          const newOrder = arrayMove(items, oldIndex, newIndex);
+          localStorage.setItem(`project-section-order-${projectId}`, JSON.stringify(newOrder));
+          return newOrder;
+        }
+        return items;
+      });
+      setBottomSectionOrder((items) => {
+        const oldIndex = items.indexOf(active.id as BottomSectionId);
+        const newIndex = items.indexOf(over.id as BottomSectionId);
+        if (oldIndex !== -1 && newIndex !== -1) {
+          const newOrder = arrayMove(items, oldIndex, newIndex);
+          localStorage.setItem(`project-bottom-section-order-${projectId}`, JSON.stringify(newOrder));
+          return newOrder;
+        }
+        return items;
       });
     }
   };
@@ -506,169 +525,186 @@ export default function ProjectDetailPage() {
         </SortableContext>
       </DndContext>
 
-      {/* Company Details Card */}
-      {company && (
-        <Card className="overflow-hidden">
-          <CardContent className="p-0">
-            <div className="flex items-center justify-between p-5 border-b">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 shrink-0">
-                  <Building2 className="h-6 w-6 text-primary" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold">{company.companyName}</h2>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    {company.category && <Badge variant="secondary" className="font-normal text-xs">{company.category}</Badge>}
-                    {company.address && (
-                      <span className="text-sm text-muted-foreground flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />{company.addressArea || company.address}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <Button variant="outline" size="sm" asChild className="gap-1.5">
-                <a href={`/companies/${company.id}`}>View Details<ArrowLeft className="h-3 w-3 rotate-180" /></a>
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x">
-              <div className="p-5 space-y-4">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Information</h3>
-                <div className="space-y-3">
-                  {company.address && (
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted shrink-0"><MapPin className="h-4 w-4 text-muted-foreground" /></div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Address</p>
-                        <p className="text-sm">{company.address}</p>
-                        {company.addressArea && <p className="text-sm text-muted-foreground">{company.addressArea}</p>}
-                      </div>
-                    </div>
-                  )}
-                  {company.website && (
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted shrink-0"><Globe className="h-4 w-4 text-muted-foreground" /></div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Website</p>
-                        <a href={company.website.startsWith("http") ? company.website : `https://${company.website}`} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline break-all">{company.website}</a>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="p-5 space-y-4">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Key Contacts</h3>
-                {contacts.length === 0 ? <p className="text-sm text-muted-foreground">No contacts found</p> : (
-                  <div className="space-y-3">
-                    {contacts.slice(0, 3).map((contact) => (
-                      <div key={contact.id} className="flex items-start gap-3 p-3 rounded-xl border border-border/50 hover:border-border hover:bg-muted/30 transition-all">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 shrink-0"><User className="h-4 w-4 text-primary" /></div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium">{contact.name}</p>
-                            {contact.designation && <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-normal">{contact.designation}</Badge>}
+      {/* Company + Payments - Draggable */}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={bottomSectionOrder} strategy={verticalListSortingStrategy}>
+          {bottomSectionOrder.map((sectionId) => {
+            if (sectionId === "company" && company) {
+              return (
+                <SortableCard key={sectionId} id={sectionId}>
+                  <Card className="overflow-hidden">
+                    <CardContent className="p-0">
+                      <div className="flex items-center justify-between p-5 border-b">
+                        <div className="flex items-center gap-4">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 shrink-0">
+                            <Building2 className="h-6 w-6 text-primary" />
                           </div>
-                          <div className="flex items-center gap-3 mt-1.5">
-                            {contact.mobile && (
-                              <a href={`tel:${contact.mobile}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors">
-                                <div className="flex h-5 w-5 items-center justify-center rounded bg-emerald-500/10"><Phone className="h-3 w-3 text-emerald-600 dark:text-emerald-400" /></div>{contact.mobile}
-                              </a>
+                          <div>
+                            <h2 className="text-lg font-semibold">{company.companyName}</h2>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              {company.category && <Badge variant="secondary" className="font-normal text-xs">{company.category}</Badge>}
+                              {company.address && (
+                                <span className="text-sm text-muted-foreground flex items-center gap-1">
+                                  <MapPin className="h-3 w-3" />{company.addressArea || company.address}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <Button variant="outline" size="sm" asChild className="gap-1.5">
+                          <a href={`/companies/${company.id}`}>View Details<ArrowLeft className="h-3 w-3 rotate-180" /></a>
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x">
+                        <div className="p-5 space-y-4">
+                          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Information</h3>
+                          <div className="space-y-3">
+                            {company.address && (
+                              <div className="flex items-start gap-3">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted shrink-0"><MapPin className="h-4 w-4 text-muted-foreground" /></div>
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Address</p>
+                                  <p className="text-sm">{company.address}</p>
+                                  {company.addressArea && <p className="text-sm text-muted-foreground">{company.addressArea}</p>}
+                                </div>
+                              </div>
                             )}
-                            {contact.email && (
-                              <a href={`mailto:${contact.email}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors">
-                                <div className="flex h-5 w-5 items-center justify-center rounded bg-blue-500/10"><Mail className="h-3 w-3 text-blue-600 dark:text-blue-400" /></div>
-                                <span className="truncate max-w-[120px]">{contact.email}</span>
-                              </a>
+                            {company.website && (
+                              <div className="flex items-start gap-3">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted shrink-0"><Globe className="h-4 w-4 text-muted-foreground" /></div>
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Website</p>
+                                  <a href={company.website.startsWith("http") ? company.website : `https://${company.website}`} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline break-all">{company.website}</a>
+                                </div>
+                              </div>
                             )}
                           </div>
                         </div>
+                        <div className="p-5 space-y-4">
+                          <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Key Contacts</h3>
+                          {contacts.length === 0 ? <p className="text-sm text-muted-foreground">No contacts found</p> : (
+                            <div className="space-y-3">
+                              {contacts.slice(0, 3).map((contact) => (
+                                <div key={contact.id} className="flex items-start gap-3 p-3 rounded-xl border border-border/50 hover:border-border hover:bg-muted/30 transition-all">
+                                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 shrink-0"><User className="h-4 w-4 text-primary" /></div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <p className="text-sm font-medium">{contact.name}</p>
+                                      {contact.designation && <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-normal">{contact.designation}</Badge>}
+                                    </div>
+                                    <div className="flex items-center gap-3 mt-1.5">
+                                      {contact.mobile && (
+                                        <a href={`tel:${contact.mobile}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors">
+                                          <div className="flex h-5 w-5 items-center justify-center rounded bg-emerald-500/10"><Phone className="h-3 w-3 text-emerald-600 dark:text-emerald-400" /></div>{contact.mobile}
+                                        </a>
+                                      )}
+                                      {contact.email && (
+                                        <a href={`mailto:${contact.email}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors">
+                                          <div className="flex h-5 w-5 items-center justify-center rounded bg-blue-500/10"><Mail className="h-3 w-3 text-blue-600 dark:text-blue-400" /></div>
+                                          <span className="truncate max-w-[120px]">{contact.email}</span>
+                                        </a>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+                    </CardContent>
+                  </Card>
+                </SortableCard>
+              );
+            }
 
-      {/* Payments Section */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-semibold">Payments</h2>
-              <p className="text-sm text-muted-foreground">{paymentMeta.total} transactions</p>
-            </div>
-            <Button size="sm" onClick={openAddPaymentDialog} className="gap-1.5">
-              <Plus className="h-4 w-4" />Add Payment
-            </Button>
-          </div>
-          {paymentsLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <Skeleton className="h-8 w-8 rounded-lg" />
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-4 w-20 ml-auto" />
-                </div>
-              ))}
-            </div>
-          ) : payments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border rounded-lg">
-              <Inbox className="h-10 w-10 mb-3 opacity-40" />
-              <p className="font-medium">No payments recorded</p>
-              <p className="text-sm mt-1">Record your first payment to get started</p>
-            </div>
-          ) : (
-            <>
-              <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
-                    <TableHead className="font-semibold">Date</TableHead>
-                    <TableHead className="font-semibold">Amount</TableHead>
-                    <TableHead className="font-semibold">Method</TableHead>
-                    <TableHead className="font-semibold">Reference</TableHead>
-                    <TableHead className="font-semibold">Note</TableHead>
-                    <TableHead className="w-[80px] font-semibold text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {payments.map((payment) => (
-                    <TableRow key={payment.id} className="group">
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 shrink-0"><CreditCard className="h-3.5 w-3.5 text-primary" /></div>
-                          <span className="text-sm">{formatDate(payment.paymentDate)}</span>
+            if (sectionId === "payments") {
+              return (
+                <SortableCard key={sectionId} id={sectionId}>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h2 className="text-lg font-semibold">Payments</h2>
+                          <p className="text-sm text-muted-foreground">{paymentMeta.total} transactions</p>
                         </div>
-                      </TableCell>
-                      <TableCell><span className="font-semibold text-emerald-600 dark:text-emerald-400">{formatCurrency(payment.amount)}</span></TableCell>
-                      <TableCell><Badge variant="secondary" className={`${PAYMENT_METHOD_COLORS[payment.paymentMethod]} font-normal`}>{PAYMENT_METHOD_LABELS[payment.paymentMethod]}</Badge></TableCell>
-                      <TableCell><span className="text-sm text-muted-foreground">{payment.reference || "-"}</span></TableCell>
-                      <TableCell><span className="text-sm text-muted-foreground max-w-[150px] truncate block">{payment.note || "-"}</span></TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditPaymentDialog(payment)}><Pencil className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => openDeleteDialog(payment.id)}><Trash2 className="h-4 w-4" /></Button>
+                        <Button size="sm" onClick={openAddPaymentDialog} className="gap-1.5">
+                          <Plus className="h-4 w-4" />Add Payment
+                        </Button>
+                      </div>
+                      {paymentsLoading ? (
+                        <div className="space-y-3">
+                          {[1, 2, 3].map((i) => (
+                            <div key={i} className="flex items-center gap-3">
+                              <Skeleton className="h-8 w-8 rounded-lg" />
+                              <Skeleton className="h-4 w-32" />
+                              <Skeleton className="h-4 w-20 ml-auto" />
+                            </div>
+                          ))}
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              {paymentMeta.totalPages > 1 && (
-                <div className="flex items-center justify-between mt-4 pt-4 border-t">
-                  <p className="text-sm text-muted-foreground">Showing {(paymentMeta.page - 1) * paymentMeta.limit + 1} to {Math.min(paymentMeta.page * paymentMeta.limit, paymentMeta.total)} of {paymentMeta.total}</p>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => fetchPayments(paymentMeta.page - 1)} disabled={paymentMeta.page === 1}>Previous</Button>
-                    <Button variant="outline" size="sm" onClick={() => fetchPayments(paymentMeta.page + 1)} disabled={paymentMeta.page === paymentMeta.totalPages}>Next</Button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </CardContent>
-      </Card>
+                      ) : payments.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border rounded-lg">
+                          <Inbox className="h-10 w-10 mb-3 opacity-40" />
+                          <p className="font-medium">No payments recorded</p>
+                          <p className="text-sm mt-1">Record your first payment to get started</p>
+                        </div>
+                      ) : (
+                        <>
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="hover:bg-transparent">
+                                <TableHead className="font-semibold">Date</TableHead>
+                                <TableHead className="font-semibold">Amount</TableHead>
+                                <TableHead className="font-semibold">Method</TableHead>
+                                <TableHead className="font-semibold">Reference</TableHead>
+                                <TableHead className="font-semibold">Note</TableHead>
+                                <TableHead className="w-[80px] font-semibold text-right">Actions</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {payments.map((payment) => (
+                                <TableRow key={payment.id} className="group">
+                                  <TableCell>
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 shrink-0"><CreditCard className="h-3.5 w-3.5 text-primary" /></div>
+                                      <span className="text-sm">{formatDate(payment.paymentDate)}</span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell><span className="font-semibold text-emerald-600 dark:text-emerald-400">{formatCurrency(payment.amount)}</span></TableCell>
+                                  <TableCell><Badge variant="secondary" className={`${PAYMENT_METHOD_COLORS[payment.paymentMethod]} font-normal`}>{PAYMENT_METHOD_LABELS[payment.paymentMethod]}</Badge></TableCell>
+                                  <TableCell><span className="text-sm text-muted-foreground">{payment.reference || "-"}</span></TableCell>
+                                  <TableCell><span className="text-sm text-muted-foreground max-w-[150px] truncate block">{payment.note || "-"}</span></TableCell>
+                                  <TableCell>
+                                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditPaymentDialog(payment)}><Pencil className="h-4 w-4" /></Button>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => openDeleteDialog(payment.id)}><Trash2 className="h-4 w-4" /></Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                          {paymentMeta.totalPages > 1 && (
+                            <div className="flex items-center justify-between mt-4 pt-4 border-t">
+                              <p className="text-sm text-muted-foreground">Showing {(paymentMeta.page - 1) * paymentMeta.limit + 1} to {Math.min(paymentMeta.page * paymentMeta.limit, paymentMeta.total)} of {paymentMeta.total}</p>
+                              <div className="flex gap-2">
+                                <Button variant="outline" size="sm" onClick={() => fetchPayments(paymentMeta.page - 1)} disabled={paymentMeta.page === 1}>Previous</Button>
+                                <Button variant="outline" size="sm" onClick={() => fetchPayments(paymentMeta.page + 1)} disabled={paymentMeta.page === paymentMeta.totalPages}>Next</Button>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>
+                </SortableCard>
+              );
+            }
+
+            return null;
+          })}
+        </SortableContext>
+      </DndContext>
 
       {/* Add/Edit Payment Dialog */}
       <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
