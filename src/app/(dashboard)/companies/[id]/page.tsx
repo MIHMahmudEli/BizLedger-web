@@ -332,17 +332,6 @@ export default function CompanyDetailPage() {
             <p className="text-sm text-muted-foreground">Basic details about this company</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x">
-            {company.category && (
-              <div className="p-5 flex items-start gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 shrink-0">
-                  <Tag className="h-5 w-5 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Category</p>
-                  <p className="text-sm font-medium">{company.category}</p>
-                </div>
-              </div>
-            )}
             {company.address && (
               <div className="p-5 flex items-start gap-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0">
@@ -352,6 +341,17 @@ export default function CompanyDetailPage() {
                   <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Address</p>
                   <p className="text-sm font-medium leading-relaxed">{company.address}</p>
                   {company.addressArea && <p className="text-sm text-muted-foreground mt-0.5">{company.addressArea}</p>}
+                </div>
+              </div>
+            )}
+            {company.category && (
+              <div className="p-5 flex items-start gap-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 shrink-0">
+                  <Tag className="h-5 w-5 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Category</p>
+                  <p className="text-sm font-medium">{company.category}</p>
                 </div>
               </div>
             )}
