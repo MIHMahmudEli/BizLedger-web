@@ -414,17 +414,6 @@ export default function CompanyDetailPage() {
                           </div>
                         </div>
                       )}
-                      {company.website && (
-                        <div className="flex items-start gap-4">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 shrink-0">
-                            <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Website</p>
-                            <a href={company.website.startsWith("http") ? company.website : `https://${company.website}`} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline break-all">{company.website}</a>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </SortableCard>
                 );
