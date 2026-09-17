@@ -130,58 +130,49 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </Link>
-        <Link href="/reports">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer group">
-            <CardContent className="pt-5 pb-5 px-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0 group-hover:bg-emerald-500/20 transition-colors">
-                  <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs text-muted-foreground">Total Value</p>
-                  <p className="text-base lg:text-lg font-bold break-words">{formatCurrency(report.totalProjectValue)}</p>
-                </div>
-                <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="pt-5 pb-5 px-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0">
+                <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               </div>
-            </CardContent>
-          </Card>
-        </Link>
-        <Link href="/reports">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer group">
-            <CardContent className="pt-5 pb-5 px-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-500/10 shrink-0 group-hover:bg-red-500/20 transition-colors">
-                  <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs text-muted-foreground">Total Due</p>
-                  <p className="text-base lg:text-lg font-bold text-red-600 dark:text-red-400 break-words">{formatCurrency(report.totalDue)}</p>
-                </div>
-                <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground">Total Value</p>
+                <p className="text-base lg:text-lg font-bold break-words">{formatCurrency(report.totalProjectValue)}</p>
               </div>
-            </CardContent>
-          </Card>
-        </Link>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="pt-5 pb-5 px-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-500/10 shrink-0">
+                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground">Total Due</p>
+                <p className="text-base lg:text-lg font-bold text-red-600 dark:text-red-400 break-words">{formatCurrency(report.totalDue)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Secondary Stats */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        <Link href="/reports">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer group">
-            <CardContent className="pt-5 pb-5 px-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0 group-hover:bg-emerald-500/20 transition-colors">
-                  <Wallet className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs text-muted-foreground">Total Paid</p>
-                  <p className="text-base lg:text-lg font-bold text-emerald-600 dark:text-emerald-400 break-words">{formatCurrency(report.totalPaid)}</p>
-                </div>
-                <ArrowUpRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="pt-5 pb-5 px-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0">
+                <Wallet className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               </div>
-            </CardContent>
-          </Card>
-        </Link>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground">Total Paid</p>
+                <p className="text-base lg:text-lg font-bold text-emerald-600 dark:text-emerald-400 break-words">{formatCurrency(report.totalPaid)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         <Link href="/projects?status=IN_PROGRESS">
           <Card className="hover:shadow-md transition-shadow cursor-pointer group">
             <CardContent className="pt-5 pb-5 px-4">
