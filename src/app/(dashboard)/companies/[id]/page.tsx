@@ -25,7 +25,7 @@ import api from "@/lib/api";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   DndContext,
@@ -129,29 +129,45 @@ const projectStatusOptions: { value: ProjectStatus; label: string }[] = [
 
 type SectionId = "company-info" | "contacts" | "projects";
 
-const SECTION_LABELS: Record<SectionId, string> = {
-  "company-info": "Company Information",
-  contacts: "Contacts",
-  projects: "Projects",
-};
-
-function SortableCard({ id, children }: { id: SectionId; children: React.ReactNode }) {
+function SortableCard({
+  id,
+  title,
+  subtitle,
+  icon,
+  action,
+  children,
+}: {
+  id: SectionId;
+  title: string;
+  subtitle?: string;
+  icon?: React.ReactNode;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: transition || "transform 250ms cubic-bezier(0.25, 1, 0.5, 1)",
     opacity: isDragging ? 0.5 : 1,
-    zIndex: isDragging ? 50 : "auto" as const,
+    zIndex: isDragging ? 50 : ("auto" as const),
   };
   return (
-    <div ref={setNodeRef} style={style} className="relative group/card">
-      <div {...attributes} {...listeners} className="absolute top-3 right-3 z-10 cursor-grab active:cursor-grabbing opacity-0 group-hover/card:opacity-100 transition-opacity">
-        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-background border shadow-sm hover:bg-accent">
-          <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
+    <Card ref={setNodeRef} style={style} className="relative group/section">
+      <CardHeader className="flex flex-row items-center gap-3 pb-4 cursor-grab active:cursor-grabbing" {...attributes} {...listeners}>
+        {icon && <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 shrink-0">{icon}</div>}
+        <div className="flex-1 min-w-0">
+          <h3 className="text-base font-semibold leading-none">{title}</h3>
+          {subtitle && <p className="text-xs text-muted-foreground mt-1.5">{subtitle}</p>}
         </div>
-      </div>
-      {children}
-    </div>
+        <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
+          {action}
+          <div className="opacity-0 group-hover/section:opacity-60 transition-opacity ml-1">
+            <GripVertical className="h-4 w-4 text-muted-foreground" />
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">{children}</CardContent>
+    </Card>
   );
 }
 
@@ -195,9 +211,7 @@ export default function CompanyDetailPage() {
 
   useEffect(() => {
     const saved = localStorage.getItem(`company-section-order-${companyId}`);
-    if (saved) {
-      try { setSectionOrder(JSON.parse(saved)); } catch {}
-    }
+    if (saved) { try { setSectionOrder(JSON.parse(saved)); } catch {} }
   }, [companyId]);
 
   const sensors = useSensors(
@@ -256,56 +270,30 @@ export default function CompanyDetailPage() {
       <div className="space-y-6">
         <div className="flex items-center gap-4">
           <Skeleton className="h-10 w-10" />
-          <div>
-            <Skeleton className="h-8 w-48 mb-2" />
-            <Skeleton className="h-4 w-32" />
-          </div>
+          <div><Skeleton className="h-8 w-48 mb-2" /><Skeleton className="h-4 w-32" /></div>
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <Card key={i}><CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-10 w-10 rounded-lg shrink-0" />
+                <div className="flex-1"><Skeleton className="h-3 w-16 mb-2" /><Skeleton className="h-5 w-24" /></div>
+              </div>
+            </CardContent></Card>
+          ))}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card>
-            <CardContent className="pt-6">
+          {[1, 2].map((i) => (
+            <Card key={i}><CardContent className="pt-6">
               <Skeleton className="h-5 w-32 mb-4" />
-              <div className="space-y-3">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="flex justify-between">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-4 w-32" />
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <Skeleton className="h-5 w-24 mb-4" />
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <Skeleton className="h-8 w-8 rounded-full" />
-                    <div className="flex-1">
-                      <Skeleton className="h-4 w-28 mb-1" />
-                      <Skeleton className="h-3 w-20" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+              <div className="space-y-3">{[1, 2, 3].map((j) => (<div key={j} className="flex justify-between"><Skeleton className="h-4 w-20" /><Skeleton className="h-4 w-28" /></div>))}</div>
+            </CardContent></Card>
+          ))}
         </div>
-        <Card>
-          <CardContent className="pt-6">
-            <Skeleton className="h-5 w-20 mb-4" />
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <Skeleton className="h-9 w-9 rounded-lg" />
-                  <Skeleton className="h-4 w-40" />
-                  <Skeleton className="h-4 w-20 ml-auto" />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <Card><CardContent className="pt-6">
+          <Skeleton className="h-5 w-20 mb-4" />
+          <div className="space-y-3">{[1, 2, 3].map((i) => (<div key={i} className="flex items-center gap-3"><Skeleton className="h-9 w-9 rounded-lg" /><Skeleton className="h-4 w-40" /><Skeleton className="h-4 w-20 ml-auto" /></div>))}</div>
+        </CardContent></Card>
       </div>
     );
   }
@@ -329,19 +317,10 @@ export default function CompanyDetailPage() {
             <div>
               <h1 className="text-2xl font-bold tracking-tight">{company.companyName}</h1>
               <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
-                {company.category && (
-                  <span className="flex items-center gap-1.5">
-                    <Badge variant="secondary" className="font-normal">{company.category}</Badge>
-                  </span>
-                )}
-                {company.addressArea && (
-                  <span className="flex items-center gap-1">
-                    <MapPin className="h-3.5 w-3.5" />{company.addressArea}
-                  </span>
-                )}
+                {company.category && <Badge variant="secondary" className="font-normal">{company.category}</Badge>}
+                {company.addressArea && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{company.addressArea}</span>}
                 {company.website && (
-                  <a href={company.website} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-primary hover:underline">
+                  <a href={company.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-primary hover:underline">
                     <Globe className="h-3.5 w-3.5" />Website
                   </a>
                 )}
@@ -352,44 +331,44 @@ export default function CompanyDetailPage() {
       </div>
 
       {/* Stats Row */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-3">
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Contacts</p>
-                <p className="text-2xl font-bold">{company.contacts?.length ?? 0}</p>
-              </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
+          <CardContent className="pt-5 pb-5 px-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 shrink-0">
                 <Phone className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground">Contacts</p>
+                <p className="text-sm lg:text-base font-bold">{company.contacts?.length ?? 0}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Projects</p>
-                <p className="text-2xl font-bold">{company.projects?.length ?? 0}</p>
-              </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
+          <CardContent className="pt-5 pb-5 px-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 shrink-0">
                 <FileText className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground">Projects</p>
+                <p className="text-sm lg:text-base font-bold">{company.projects?.length ?? 0}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Value</p>
-                <p className="text-2xl font-bold">
+          <CardContent className="pt-5 pb-5 px-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 shrink-0">
+                <span className="text-lg font-bold text-primary">$</span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground">Total Value</p>
+                <p className="text-sm lg:text-base font-bold break-words">
                   {formatCurrency(company.projects?.reduce((sum, p) => sum + parseFloat(p.totalValue || "0"), 0) ?? 0)}
                 </p>
-              </div>
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                <span className="text-lg font-bold text-primary">$</span>
               </div>
             </div>
           </CardContent>
@@ -399,208 +378,205 @@ export default function CompanyDetailPage() {
       {/* Draggable Sections */}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={sectionOrder} strategy={verticalListSortingStrategy}>
-          {sectionOrder.map((sectionId) => {
-            if (sectionId === "company-info") {
-              return (
-                <SortableCard key={sectionId} id={sectionId}>
-                  <Card className="overflow-hidden">
-                    <CardContent className="p-0">
-                      <div className="p-5 border-b">
-                        <h2 className="text-lg font-semibold">Company Information</h2>
-                        <p className="text-sm text-muted-foreground">Basic details about this company</p>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x">
-                        {company.address && (
-                          <div className="p-5 flex items-start gap-4">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0">
-                              <MapPin className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Address</p>
-                              <p className="text-sm font-medium leading-relaxed">{company.address}</p>
-                              {company.addressArea && <p className="text-sm text-muted-foreground mt-0.5">{company.addressArea}</p>}
-                            </div>
+          <div className="space-y-6">
+            {sectionOrder.map((sectionId) => {
+              if (sectionId === "company-info") {
+                return (
+                  <SortableCard
+                    key={sectionId}
+                    id={sectionId}
+                    title="Company Information"
+                    subtitle="Basic details about this company"
+                    icon={<Building2 className="h-4 w-4 text-primary" />}
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {company.address && (
+                        <div className="flex items-start gap-4">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0">
+                            <MapPin className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                           </div>
-                        )}
-                        {company.category && (
-                          <div className="p-5 flex items-start gap-4">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 shrink-0">
-                              <Tag className="h-5 w-5 text-primary" />
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Category</p>
-                              <p className="text-sm font-medium">{company.category}</p>
-                            </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Address</p>
+                            <p className="text-sm font-medium leading-relaxed">{company.address}</p>
+                            {company.addressArea && <p className="text-sm text-muted-foreground mt-0.5">{company.addressArea}</p>}
                           </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </SortableCard>
-              );
-            }
-
-            if (sectionId === "contacts") {
-              return (
-                <SortableCard key={sectionId} id={sectionId}>
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <h2 className="text-lg font-semibold">Contacts</h2>
-                          <p className="text-sm text-muted-foreground">{company.contacts?.length ?? 0} team members</p>
                         </div>
-                        <Button size="sm" onClick={openCreateContact} className="gap-1.5">
-                          <Plus className="h-4 w-4" />Add Contact
-                        </Button>
-                      </div>
-                      {!company.contacts || company.contacts.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border rounded-lg">
-                          <Inbox className="h-10 w-10 mb-3 opacity-40" />
-                          <p className="font-medium">No contacts yet</p>
-                          <p className="text-sm mt-1">Add your first contact to get started</p>
-                        </div>
-                      ) : (
-                        <Table>
-                          <TableHeader>
-                            <TableRow className="hover:bg-transparent">
-                              <TableHead className="font-semibold">Contact</TableHead>
-                              <TableHead className="font-semibold">Designation</TableHead>
-                              <TableHead className="font-semibold">Phone</TableHead>
-                              <TableHead className="font-semibold">Email</TableHead>
-                              <TableHead className="w-[80px] font-semibold text-right">Actions</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {company.contacts.map((contact) => (
-                              <TableRow key={contact.id} className="group">
-                                <TableCell>
-                                  <div className="flex items-center gap-3">
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 shrink-0">
-                                      <span className="text-xs font-bold text-primary">
-                                        {contact.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
-                                      </span>
-                                    </div>
-                                    <span className="font-medium">{contact.name}</span>
-                                  </div>
-                                </TableCell>
-                                <TableCell>
-                                  {contact.designation ? (
-                                    <Badge variant="secondary" className={`${DESIGNATION_COLORS[contact.designation] || "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"} font-normal`}>
-                                      {contact.designation}
-                                    </Badge>
-                                  ) : <span className="text-muted-foreground">-</span>}
-                                </TableCell>
-                                <TableCell>
-                                  {contact.mobile ? (
-                                    <span className="flex items-center gap-1.5 text-sm">
-                                      <Phone className="h-3.5 w-3.5 text-muted-foreground" />{contact.mobile}
-                                    </span>
-                                  ) : <span className="text-muted-foreground">-</span>}
-                                </TableCell>
-                                <TableCell>
-                                  {contact.email ? (
-                                    <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                                      <Mail className="h-3.5 w-3.5" />{contact.email}
-                                    </span>
-                                  ) : <span className="text-muted-foreground">-</span>}
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditContact(contact)}>
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => openDeleteContact(contact)}>
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
                       )}
-                    </CardContent>
-                  </Card>
-                </SortableCard>
-              );
-            }
+                      {company.category && (
+                        <div className="flex items-start gap-4">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 shrink-0">
+                            <Tag className="h-5 w-5 text-primary" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Category</p>
+                            <p className="text-sm font-medium">{company.category}</p>
+                          </div>
+                        </div>
+                      )}
+                      {company.website && (
+                        <div className="flex items-start gap-4">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 shrink-0">
+                            <Globe className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Website</p>
+                            <a href={company.website.startsWith("http") ? company.website : `https://${company.website}`} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline break-all">{company.website}</a>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </SortableCard>
+                );
+              }
 
-            if (sectionId === "projects") {
-              return (
-                <SortableCard key={sectionId} id={sectionId}>
-                  <Card>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <h2 className="text-lg font-semibold">Projects</h2>
-                          <p className="text-sm text-muted-foreground">{company.projects?.length ?? 0} active projects</p>
-                        </div>
-                        <Button size="sm" onClick={openCreateProject} className="gap-1.5">
-                          <Plus className="h-4 w-4" />Add Project
-                        </Button>
+              if (sectionId === "contacts") {
+                return (
+                  <SortableCard
+                    key={sectionId}
+                    id={sectionId}
+                    title="Contacts"
+                    subtitle={`${company.contacts?.length ?? 0} team members`}
+                    icon={<Phone className="h-4 w-4 text-primary" />}
+                    action={<Button size="sm" onClick={openCreateContact} className="gap-1.5 h-8"><Plus className="h-3.5 w-3.5" />Add Contact</Button>}
+                  >
+                    {!company.contacts || company.contacts.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border border-dashed rounded-xl">
+                        <Inbox className="h-10 w-10 mb-3 opacity-40" />
+                        <p className="font-medium">No contacts yet</p>
+                        <p className="text-sm mt-1">Add your first contact to get started</p>
                       </div>
-                      {!company.projects || company.projects.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border rounded-lg">
-                          <Inbox className="h-10 w-10 mb-3 opacity-40" />
-                          <p className="font-medium">No projects yet</p>
-                          <p className="text-sm mt-1">Create your first project for this company</p>
-                        </div>
-                      ) : (
-                        <Table>
-                          <TableHeader>
-                            <TableRow className="hover:bg-transparent">
-                              <TableHead className="font-semibold">Project</TableHead>
-                              <TableHead className="font-semibold">Type</TableHead>
-                              <TableHead className="font-semibold text-right">Value</TableHead>
-                              <TableHead className="font-semibold">Status</TableHead>
-                              <TableHead className="font-semibold">Deadline</TableHead>
-                              <TableHead className="w-[80px] font-semibold text-right">Actions</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {company.projects.map((project) => (
-                              <TableRow key={project.id} className="group">
-                                <TableCell>
-                                  <div>
-                                    <p className="font-medium">{project.projectName}</p>
-                                    {project.description && (
-                                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{project.description}</p>
-                                    )}
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="hover:bg-transparent">
+                            <TableHead className="font-semibold">Contact</TableHead>
+                            <TableHead className="font-semibold">Designation</TableHead>
+                            <TableHead className="font-semibold">Phone</TableHead>
+                            <TableHead className="font-semibold">Email</TableHead>
+                            <TableHead className="w-[80px] font-semibold text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {company.contacts.map((contact) => (
+                            <TableRow key={contact.id} className="group">
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 shrink-0">
+                                    <span className="text-xs font-bold text-primary">
+                                      {contact.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                                    </span>
                                   </div>
-                                </TableCell>
-                                <TableCell><span className="text-sm text-muted-foreground">{project.projectType ?? "-"}</span></TableCell>
-                                <TableCell className="text-right font-medium">{project.totalValue ? formatCurrency(project.totalValue) : "-"}</TableCell>
-                                <TableCell>
-                                  <Badge variant="secondary" className={`${PROJECT_STATUS_COLORS[project.status]} font-normal gap-1`}>
-                                    {PROJECT_STATUS_ICONS[project.status]}
-                                    {project.status.replace(/_/g, " ")}
+                                  <span className="font-medium">{contact.name}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {contact.designation ? (
+                                  <Badge variant="secondary" className={`${DESIGNATION_COLORS[contact.designation] || "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"} font-normal`}>
+                                    {contact.designation}
                                   </Badge>
-                                </TableCell>
-                                <TableCell><span className="text-sm text-muted-foreground">{project.deadline ? formatDate(project.deadline) : "-"}</span></TableCell>
-                                <TableCell>
-                                  <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditProject(project)}>
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => openDeleteProject(project)}>
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      )}
-                    </CardContent>
-                  </Card>
-                </SortableCard>
-              );
-            }
+                                ) : <span className="text-muted-foreground">-</span>}
+                              </TableCell>
+                              <TableCell>
+                                {contact.mobile ? (
+                                  <span className="flex items-center gap-1.5 text-sm">
+                                    <Phone className="h-3.5 w-3.5 text-muted-foreground" />{contact.mobile}
+                                  </span>
+                                ) : <span className="text-muted-foreground">-</span>}
+                              </TableCell>
+                              <TableCell>
+                                {contact.email ? (
+                                  <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                                    <Mail className="h-3.5 w-3.5" />{contact.email}
+                                  </span>
+                                ) : <span className="text-muted-foreground">-</span>}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditContact(contact)}>
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => openDeleteContact(contact)}>
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </SortableCard>
+                );
+              }
 
-            return null;
-          })}
+              if (sectionId === "projects") {
+                return (
+                  <SortableCard
+                    key={sectionId}
+                    id={sectionId}
+                    title="Projects"
+                    subtitle={`${company.projects?.length ?? 0} active projects`}
+                    icon={<FileText className="h-4 w-4 text-primary" />}
+                    action={<Button size="sm" onClick={openCreateProject} className="gap-1.5 h-8"><Plus className="h-3.5 w-3.5" />Add Project</Button>}
+                  >
+                    {!company.projects || company.projects.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border border-dashed rounded-xl">
+                        <Inbox className="h-10 w-10 mb-3 opacity-40" />
+                        <p className="font-medium">No projects yet</p>
+                        <p className="text-sm mt-1">Create your first project for this company</p>
+                      </div>
+                    ) : (
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="hover:bg-transparent">
+                            <TableHead className="font-semibold">Project</TableHead>
+                            <TableHead className="font-semibold">Type</TableHead>
+                            <TableHead className="font-semibold text-right">Value</TableHead>
+                            <TableHead className="font-semibold">Status</TableHead>
+                            <TableHead className="font-semibold">Deadline</TableHead>
+                            <TableHead className="w-[80px] font-semibold text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {company.projects.map((project) => (
+                            <TableRow key={project.id} className="group">
+                              <TableCell>
+                                <div>
+                                  <p className="font-medium">{project.projectName}</p>
+                                  {project.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{project.description}</p>}
+                                </div>
+                              </TableCell>
+                              <TableCell><span className="text-sm text-muted-foreground">{project.projectType ?? "-"}</span></TableCell>
+                              <TableCell className="text-right font-medium">{project.totalValue ? formatCurrency(project.totalValue) : "-"}</TableCell>
+                              <TableCell>
+                                <Badge variant="secondary" className={`${PROJECT_STATUS_COLORS[project.status]} font-normal gap-1`}>
+                                  {PROJECT_STATUS_ICONS[project.status]}
+                                  {project.status.replace(/_/g, " ")}
+                                </Badge>
+                              </TableCell>
+                              <TableCell><span className="text-sm text-muted-foreground">{project.deadline ? formatDate(project.deadline) : "-"}</span></TableCell>
+                              <TableCell>
+                                <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditProject(project)}>
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => openDeleteProject(project)}>
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    )}
+                  </SortableCard>
+                );
+              }
+
+              return null;
+            })}
+          </div>
         </SortableContext>
       </DndContext>
 
@@ -648,7 +624,7 @@ export default function CompanyDetailPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setContactDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleSaveContact} disabled={contactSaving || !contactForm.name.trim()}>
-              {contactSaving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}{editingContact ? "Update" : "Add"}
+              {editingContact ? "Update" : "Add"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -663,7 +639,7 @@ export default function CompanyDetailPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteContactOpen(false)}>Cancel</Button>
             <Button variant="destructive" onClick={handleDeleteContact} disabled={contactDeleting}>
-              {contactDeleting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Delete
+              Delete
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -736,7 +712,7 @@ export default function CompanyDetailPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setProjectDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleSaveProject} disabled={projectSaving || !projectForm.projectName.trim()}>
-              {projectSaving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}{editingProject ? "Update" : "Add"}
+              {editingProject ? "Update" : "Add"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -751,7 +727,7 @@ export default function CompanyDetailPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteProjectOpen(false)}>Cancel</Button>
             <Button variant="destructive" onClick={handleDeleteProject} disabled={projectDeleting}>
-              {projectDeleting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Delete
+              Delete
             </Button>
           </DialogFooter>
         </DialogContent>
