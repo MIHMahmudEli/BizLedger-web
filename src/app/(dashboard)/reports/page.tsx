@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { BarChart3, Calendar, FileText, AlertTriangle } from "lucide-react";
+import { BarChart3, Calendar, CreditCard, FileText, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -155,8 +155,9 @@ function OutstandingSection() {
   return (
     <Card>
       <CardContent className="pt-6">
-        <div className="flex flex-col gap-4 mb-6">
-          <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-end gap-3 mb-6">
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Type</label>
             <div className="relative">
               <Input
                 value={projectType || projectTypeSearch}
@@ -183,30 +184,28 @@ function OutstandingSection() {
                 </div>
               )}
             </div>
-            <div className="flex items-center gap-2">
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">Min Due</label>
-                <Input type="number" placeholder="0" value={minDue} onChange={(e) => { setMinDue(e.target.value); setPage(1); }} className="w-28" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">Max Due</label>
-                <Input type="number" placeholder="No limit" value={maxDue} onChange={(e) => { setMaxDue(e.target.value); setPage(1); }} className="w-28" />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Date From</label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} className="pl-9" />
-              </div>
-            </div>
-            {hasFilters && (
-              <Button variant="ghost" size="sm" onClick={() => { setProjectType(""); setMinDue(""); setMaxDue(""); setDateFrom(""); setDateTo(""); setProjectTypeSearch(""); }}
-                className="text-muted-foreground mt-4">
-                Clear
-              </Button>
-            )}
           </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Min Due</label>
+            <Input type="number" placeholder="0" value={minDue} onChange={(e) => { setMinDue(e.target.value); setPage(1); }} className="w-28" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Max Due</label>
+            <Input type="number" placeholder="No limit" value={maxDue} onChange={(e) => { setMaxDue(e.target.value); setPage(1); }} className="w-28" />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Date From</label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} className="pl-9" />
+            </div>
+          </div>
+          {hasFilters && (
+            <Button variant="ghost" size="sm" onClick={() => { setProjectType(""); setMinDue(""); setMaxDue(""); setDateFrom(""); setDateTo(""); setProjectTypeSearch(""); }}
+              className="text-muted-foreground h-9">
+              Clear
+            </Button>
+          )}
         </div>
 
         {loading ? (
@@ -306,38 +305,36 @@ function PaymentReportSection() {
   return (
     <Card>
       <CardContent className="pt-6">
-        <div className="flex flex-col gap-4 mb-6">
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">From</label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} className="pl-9" />
-              </div>
+        <div className="flex items-end gap-3 mb-6">
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">From</label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} className="pl-9" />
             </div>
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">To</label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} className="pl-9" />
-              </div>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Method</label>
-              <Select value={paymentMethod} onValueChange={(value) => { setPaymentMethod(value as PaymentMethod | "ALL"); setPage(1); }}>
-                <SelectTrigger className="w-40"><SelectValue placeholder="All Methods" /></SelectTrigger>
-                <SelectContent>
-                  {PAYMENT_METHODS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            {hasFilters && (
-              <Button variant="ghost" size="sm" onClick={() => { setPaymentMethod("ALL"); setDateFrom(""); setDateTo(""); }}
-                className="text-muted-foreground mt-4">
-                Clear
-              </Button>
-            )}
           </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">To</label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} className="pl-9" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Method</label>
+            <Select value={paymentMethod} onValueChange={(value) => { setPaymentMethod(value as PaymentMethod | "ALL"); setPage(1); }}>
+              <SelectTrigger className="w-40"><SelectValue placeholder="All Methods" /></SelectTrigger>
+              <SelectContent>
+                {PAYMENT_METHODS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          {hasFilters && (
+            <Button variant="ghost" size="sm" onClick={() => { setPaymentMethod("ALL"); setDateFrom(""); setDateTo(""); }}
+              className="text-muted-foreground h-9">
+              Clear
+            </Button>
+          )}
         </div>
 
         {loading ? (
