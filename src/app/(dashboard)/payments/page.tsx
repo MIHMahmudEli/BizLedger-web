@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { CreditCard, Search, Calendar } from "lucide-react";
+import { CreditCard, Search, Calendar, X, Banknote } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -37,12 +36,12 @@ const PAYMENT_METHODS: { value: PaymentMethod | "ALL"; label: string }[] = [
 ];
 
 const METHOD_COLORS: Record<PaymentMethod, string> = {
-  CASH: "bg-emerald-100 text-emerald-800",
-  BANK_TRANSFER: "bg-blue-100 text-blue-800",
-  CARD: "bg-purple-100 text-purple-800",
-  MOBILE_BANKING: "bg-amber-100 text-amber-800",
-  CHEQUE: "bg-cyan-100 text-cyan-800",
-  OTHER: "bg-gray-100 text-gray-800",
+  CASH: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
+  BANK_TRANSFER: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+  CARD: "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+  MOBILE_BANKING: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
+  CHEQUE: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200",
+  OTHER: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200",
 };
 
 const METHOD_LABELS: Record<PaymentMethod, string> = {
@@ -56,12 +55,7 @@ const METHOD_LABELS: Record<PaymentMethod, string> = {
 
 export default function PaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
-  const [meta, setMeta] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-    totalPages: 0,
-  });
+  const [meta, setMeta] = useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | "ALL">("ALL");
@@ -75,10 +69,7 @@ export default function PaymentsPage() {
       if (paymentMethod !== "ALL") params.paymentMethod = paymentMethod;
       if (dateFrom) params.dateFrom = dateFrom;
       if (dateTo) params.dateTo = dateTo;
-
-      const response = await api.get<PaginatedResponse<Payment>>("/payments", {
-        params,
-      });
+      const response = await api.get<PaginatedResponse<Payment>>("/payments", { params });
       setPayments(response.data.data);
       setMeta(response.data.meta);
     } catch (error) {
@@ -88,160 +79,147 @@ export default function PaymentsPage() {
     }
   }, [page, paymentMethod, dateFrom, dateTo]);
 
-  useEffect(() => {
-    fetchPayments();
-  }, [fetchPayments]);
+  useEffect(() => { fetchPayments(); }, [fetchPayments]);
 
-  const handleMethodChange = (value: string) => {
-    setPaymentMethod(value as PaymentMethod | "ALL");
-    setPage(1);
-  };
-
-  const handleDateFromChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDateFrom(e.target.value);
-    setPage(1);
-  };
-
-  const handleDateToChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDateTo(e.target.value);
-    setPage(1);
-  };
+  const hasFilters = paymentMethod !== "ALL" || dateFrom || dateTo;
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <CreditCard className="h-6 w-6" />
-          <h1 className="text-2xl font-bold">Payments</h1>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Payments</h1>
+          <p className="text-sm text-muted-foreground">View and track all payment transactions</p>
         </div>
-        <Badge variant="secondary">{meta.total} total</Badge>
+        <Badge variant="secondary" className="text-sm px-3 py-1">{meta.total} payments</Badge>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Filters</CardTitle>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="dateFrom">Date From</Label>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="grid gap-3 md:grid-cols-3 flex-1">
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">From</label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  id="dateFrom"
                   type="date"
                   value={dateFrom}
-                  onChange={handleDateFromChange}
+                  onChange={(e) => { setDateFrom(e.target.value); setPage(1); }}
                   className="pl-9"
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="dateTo">Date To</Label>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">To</label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  id="dateTo"
                   type="date"
                   value={dateTo}
-                  onChange={handleDateToChange}
+                  onChange={(e) => { setDateTo(e.target.value); setPage(1); }}
                   className="pl-9"
                 />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>Payment Method</Label>
-              <Select value={paymentMethod} onValueChange={handleMethodChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select method" />
-                </SelectTrigger>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Method</label>
+              <Select value={paymentMethod} onValueChange={(value) => { setPaymentMethod(value as PaymentMethod | "ALL"); setPage(1); }}>
+                <SelectTrigger><SelectValue placeholder="All Methods" /></SelectTrigger>
                 <SelectContent>
-                  {PAYMENT_METHODS.map((m) => (
-                    <SelectItem key={m.value} value={m.value}>
-                      {m.label}
-                    </SelectItem>
-                  ))}
+                  {PAYMENT_METHODS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
           </div>
-        </CardHeader>
-        <CardContent>
+          {hasFilters && (
+            <Button variant="ghost" size="sm" onClick={() => { setPaymentMethod("ALL"); setDateFrom(""); setDateTo(""); }}
+              className="text-muted-foreground mt-4">
+              <X className="h-4 w-4 mr-1" />Clear
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <Card>
+        <CardContent className="p-0">
           {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            <div className="flex items-center justify-center py-16">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             </div>
           ) : payments.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No payments found
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <Banknote className="h-12 w-12 mb-4 opacity-40" />
+              <p className="text-lg font-medium">No payments found</p>
+              <p className="text-sm mt-1">Payments will appear here once recorded</p>
             </div>
           ) : (
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Method</TableHead>
-                  <TableHead>Reference</TableHead>
-                  <TableHead>Project</TableHead>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Note</TableHead>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="font-semibold">Date</TableHead>
+                  <TableHead className="font-semibold">Amount</TableHead>
+                  <TableHead className="font-semibold">Method</TableHead>
+                  <TableHead className="font-semibold">Reference</TableHead>
+                  <TableHead className="font-semibold">Project</TableHead>
+                  <TableHead className="font-semibold">Company</TableHead>
+                  <TableHead className="font-semibold">Note</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {payments.map((payment) => (
-                  <TableRow key={payment.id}>
-                    <TableCell>{formatDate(payment.paymentDate)}</TableCell>
-                    <TableCell className="font-medium">
-                      {formatCurrency(payment.amount)}
+                  <TableRow key={payment.id} className="group">
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 shrink-0">
+                          <CreditCard className="h-3.5 w-3.5 text-primary" />
+                        </div>
+                        <span className="text-sm">{formatDate(payment.paymentDate)}</span>
+                      </div>
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant="secondary"
-                        className={METHOD_COLORS[payment.paymentMethod]}
-                      >
+                      <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                        {formatCurrency(payment.amount)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className={`${METHOD_COLORS[payment.paymentMethod]} font-normal`}>
                         {METHOD_LABELS[payment.paymentMethod]}
                       </Badge>
                     </TableCell>
-                    <TableCell>{payment.reference || "N/A"}</TableCell>
-                    <TableCell>{payment.projectName || "N/A"}</TableCell>
-                    <TableCell>{payment.companyName || "N/A"}</TableCell>
-                    <TableCell className="max-w-[200px] truncate">
-                      {payment.note || "N/A"}
+                    <TableCell>
+                      <span className="text-sm text-muted-foreground">{payment.reference || "-"}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm font-medium">{payment.projectName || "-"}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-muted-foreground">{payment.companyName || "-"}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-muted-foreground max-w-[200px] truncate block">{payment.note || "-"}</span>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           )}
-
-          {meta.totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4">
-              <p className="text-sm text-muted-foreground">
-                Page {meta.page} of {meta.totalPages}
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    setPage((p) => Math.min(meta.totalPages, p + 1))
-                  }
-                  disabled={page === meta.totalPages}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
+
+      {meta.totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Showing {(meta.page - 1) * meta.limit + 1} to {Math.min(meta.page * meta.limit, meta.total)} of {meta.total}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
+              Previous
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))} disabled={page === meta.totalPages}>
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
