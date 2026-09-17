@@ -11,6 +11,7 @@ import {
   FileText,
   Globe,
   Inbox,
+  GripVertical,
   Mail,
   MapPin,
   Phone,
@@ -26,6 +27,23 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   Dialog,
   DialogContent,
@@ -109,12 +127,41 @@ const projectStatusOptions: { value: ProjectStatus; label: string }[] = [
   { value: "CANCELLED", label: "Cancelled" },
 ];
 
+type SectionId = "company-info" | "contacts" | "projects";
+
+const SECTION_LABELS: Record<SectionId, string> = {
+  "company-info": "Company Information",
+  contacts: "Contacts",
+  projects: "Projects",
+};
+
+function SortableCard({ id, children }: { id: SectionId; children: React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 50 : "auto" as const,
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="relative group/card">
+      <div {...attributes} {...listeners} className="absolute top-3 right-3 z-10 cursor-grab active:cursor-grabbing opacity-0 group-hover/card:opacity-100 transition-opacity">
+        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-background border shadow-sm hover:bg-accent">
+          <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
+
 export default function CompanyDetailPage() {
   const params = useParams();
   const router = useRouter();
   const companyId = params.id as string;
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sectionOrder, setSectionOrder] = useState<SectionId[]>(["company-info", "contacts", "projects"]);
 
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
@@ -145,6 +192,31 @@ export default function CompanyDetailPage() {
   }, [companyId, router]);
 
   useEffect(() => { fetchCompany(); }, [fetchCompany]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem(`company-section-order-${companyId}`);
+    if (saved) {
+      try { setSectionOrder(JSON.parse(saved)); } catch {}
+    }
+  }, [companyId]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      setSectionOrder((items) => {
+        const oldIndex = items.indexOf(active.id as SectionId);
+        const newIndex = items.indexOf(over.id as SectionId);
+        const newOrder = arrayMove(items, oldIndex, newIndex);
+        localStorage.setItem(`company-section-order-${companyId}`, JSON.stringify(newOrder));
+        return newOrder;
+      });
+    }
+  };
 
   const openCreateContact = () => { setEditingContact(null); setContactForm(emptyContactForm); setDesignationSearch(""); setContactDialogOpen(true); };
   const openEditContact = (c: Contact) => { setEditingContact(c); setContactForm({ name: c.name, designation: c.designation ?? "", mobile: c.mobile ?? "", email: c.email ?? "" }); setDesignationSearch(""); setContactDialogOpen(true); };
@@ -324,189 +396,213 @@ export default function CompanyDetailPage() {
         </Card>
       </div>
 
-      {/* Company Info */}
-      <Card className="overflow-hidden">
-        <CardContent className="p-0">
-          <div className="p-5 border-b">
-            <h2 className="text-lg font-semibold">Company Information</h2>
-            <p className="text-sm text-muted-foreground">Basic details about this company</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x">
-            {company.address && (
-              <div className="p-5 flex items-start gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0">
-                  <MapPin className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Address</p>
-                  <p className="text-sm font-medium leading-relaxed">{company.address}</p>
-                  {company.addressArea && <p className="text-sm text-muted-foreground mt-0.5">{company.addressArea}</p>}
-                </div>
-              </div>
-            )}
-            {company.category && (
-              <div className="p-5 flex items-start gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 shrink-0">
-                  <Tag className="h-5 w-5 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Category</p>
-                  <p className="text-sm font-medium">{company.category}</p>
-                </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Contacts Section */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-semibold">Contacts</h2>
-              <p className="text-sm text-muted-foreground">{company.contacts?.length ?? 0} team members</p>
-            </div>
-            <Button size="sm" onClick={openCreateContact} className="gap-1.5">
-              <Plus className="h-4 w-4" />Add Contact
-            </Button>
-          </div>
-          {!company.contacts || company.contacts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border rounded-lg">
-              <Inbox className="h-10 w-10 mb-3 opacity-40" />
-              <p className="font-medium">No contacts yet</p>
-              <p className="text-sm mt-1">Add your first contact to get started</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="font-semibold">Contact</TableHead>
-                  <TableHead className="font-semibold">Designation</TableHead>
-                  <TableHead className="font-semibold">Phone</TableHead>
-                  <TableHead className="font-semibold">Email</TableHead>
-                  <TableHead className="w-[80px] font-semibold text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {company.contacts.map((contact) => (
-                  <TableRow key={contact.id} className="group">
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 shrink-0">
-                          <span className="text-xs font-bold text-primary">
-                            {contact.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
-                          </span>
-                        </div>
-                        <span className="font-medium">{contact.name}</span>
+      {/* Draggable Sections */}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={sectionOrder} strategy={verticalListSortingStrategy}>
+          {sectionOrder.map((sectionId) => {
+            if (sectionId === "company-info") {
+              return (
+                <SortableCard key={sectionId} id={sectionId}>
+                  <Card className="overflow-hidden">
+                    <CardContent className="p-0">
+                      <div className="p-5 border-b">
+                        <h2 className="text-lg font-semibold">Company Information</h2>
+                        <p className="text-sm text-muted-foreground">Basic details about this company</p>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      {contact.designation ? (
-                        <Badge variant="secondary" className={`${DESIGNATION_COLORS[contact.designation] || "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"} font-normal`}>
-                          {contact.designation}
-                        </Badge>
-                      ) : <span className="text-muted-foreground">-</span>}
-                    </TableCell>
-                    <TableCell>
-                      {contact.mobile ? (
-                        <span className="flex items-center gap-1.5 text-sm">
-                          <Phone className="h-3.5 w-3.5 text-muted-foreground" />{contact.mobile}
-                        </span>
-                      ) : <span className="text-muted-foreground">-</span>}
-                    </TableCell>
-                    <TableCell>
-                      {contact.email ? (
-                        <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                          <Mail className="h-3.5 w-3.5" />{contact.email}
-                        </span>
-                      ) : <span className="text-muted-foreground">-</span>}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditContact(contact)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => openDeleteContact(contact)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Projects Section */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-lg font-semibold">Projects</h2>
-              <p className="text-sm text-muted-foreground">{company.projects?.length ?? 0} active projects</p>
-            </div>
-            <Button size="sm" onClick={openCreateProject} className="gap-1.5">
-              <Plus className="h-4 w-4" />Add Project
-            </Button>
-          </div>
-          {!company.projects || company.projects.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border rounded-lg">
-              <Inbox className="h-10 w-10 mb-3 opacity-40" />
-              <p className="font-medium">No projects yet</p>
-              <p className="text-sm mt-1">Create your first project for this company</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="font-semibold">Project</TableHead>
-                  <TableHead className="font-semibold">Type</TableHead>
-                  <TableHead className="font-semibold text-right">Value</TableHead>
-                  <TableHead className="font-semibold">Status</TableHead>
-                  <TableHead className="font-semibold">Deadline</TableHead>
-                  <TableHead className="w-[80px] font-semibold text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {company.projects.map((project) => (
-                  <TableRow key={project.id} className="group">
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{project.projectName}</p>
-                        {project.description && (
-                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{project.description}</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x">
+                        {company.address && (
+                          <div className="p-5 flex items-start gap-4">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0">
+                              <MapPin className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Address</p>
+                              <p className="text-sm font-medium leading-relaxed">{company.address}</p>
+                              {company.addressArea && <p className="text-sm text-muted-foreground mt-0.5">{company.addressArea}</p>}
+                            </div>
+                          </div>
+                        )}
+                        {company.category && (
+                          <div className="p-5 flex items-start gap-4">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 shrink-0">
+                              <Tag className="h-5 w-5 text-primary" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Category</p>
+                              <p className="text-sm font-medium">{company.category}</p>
+                            </div>
+                          </div>
                         )}
                       </div>
-                    </TableCell>
-                    <TableCell><span className="text-sm text-muted-foreground">{project.projectType ?? "-"}</span></TableCell>
-                    <TableCell className="text-right font-medium">{project.totalValue ? formatCurrency(project.totalValue) : "-"}</TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className={`${PROJECT_STATUS_COLORS[project.status]} font-normal gap-1`}>
-                        {PROJECT_STATUS_ICONS[project.status]}
-                        {project.status.replace(/_/g, " ")}
-                      </Badge>
-                    </TableCell>
-                    <TableCell><span className="text-sm text-muted-foreground">{project.deadline ? formatDate(project.deadline) : "-"}</span></TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditProject(project)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => openDeleteProject(project)}>
-                          <Trash2 className="h-4 w-4" />
+                    </CardContent>
+                  </Card>
+                </SortableCard>
+              );
+            }
+
+            if (sectionId === "contacts") {
+              return (
+                <SortableCard key={sectionId} id={sectionId}>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h2 className="text-lg font-semibold">Contacts</h2>
+                          <p className="text-sm text-muted-foreground">{company.contacts?.length ?? 0} team members</p>
+                        </div>
+                        <Button size="sm" onClick={openCreateContact} className="gap-1.5">
+                          <Plus className="h-4 w-4" />Add Contact
                         </Button>
                       </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                      {!company.contacts || company.contacts.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border rounded-lg">
+                          <Inbox className="h-10 w-10 mb-3 opacity-40" />
+                          <p className="font-medium">No contacts yet</p>
+                          <p className="text-sm mt-1">Add your first contact to get started</p>
+                        </div>
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="hover:bg-transparent">
+                              <TableHead className="font-semibold">Contact</TableHead>
+                              <TableHead className="font-semibold">Designation</TableHead>
+                              <TableHead className="font-semibold">Phone</TableHead>
+                              <TableHead className="font-semibold">Email</TableHead>
+                              <TableHead className="w-[80px] font-semibold text-right">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {company.contacts.map((contact) => (
+                              <TableRow key={contact.id} className="group">
+                                <TableCell>
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 shrink-0">
+                                      <span className="text-xs font-bold text-primary">
+                                        {contact.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                                      </span>
+                                    </div>
+                                    <span className="font-medium">{contact.name}</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  {contact.designation ? (
+                                    <Badge variant="secondary" className={`${DESIGNATION_COLORS[contact.designation] || "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"} font-normal`}>
+                                      {contact.designation}
+                                    </Badge>
+                                  ) : <span className="text-muted-foreground">-</span>}
+                                </TableCell>
+                                <TableCell>
+                                  {contact.mobile ? (
+                                    <span className="flex items-center gap-1.5 text-sm">
+                                      <Phone className="h-3.5 w-3.5 text-muted-foreground" />{contact.mobile}
+                                    </span>
+                                  ) : <span className="text-muted-foreground">-</span>}
+                                </TableCell>
+                                <TableCell>
+                                  {contact.email ? (
+                                    <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                                      <Mail className="h-3.5 w-3.5" />{contact.email}
+                                    </span>
+                                  ) : <span className="text-muted-foreground">-</span>}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditContact(contact)}>
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => openDeleteContact(contact)}>
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </CardContent>
+                  </Card>
+                </SortableCard>
+              );
+            }
+
+            if (sectionId === "projects") {
+              return (
+                <SortableCard key={sectionId} id={sectionId}>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h2 className="text-lg font-semibold">Projects</h2>
+                          <p className="text-sm text-muted-foreground">{company.projects?.length ?? 0} active projects</p>
+                        </div>
+                        <Button size="sm" onClick={openCreateProject} className="gap-1.5">
+                          <Plus className="h-4 w-4" />Add Project
+                        </Button>
+                      </div>
+                      {!company.projects || company.projects.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground border rounded-lg">
+                          <Inbox className="h-10 w-10 mb-3 opacity-40" />
+                          <p className="font-medium">No projects yet</p>
+                          <p className="text-sm mt-1">Create your first project for this company</p>
+                        </div>
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="hover:bg-transparent">
+                              <TableHead className="font-semibold">Project</TableHead>
+                              <TableHead className="font-semibold">Type</TableHead>
+                              <TableHead className="font-semibold text-right">Value</TableHead>
+                              <TableHead className="font-semibold">Status</TableHead>
+                              <TableHead className="font-semibold">Deadline</TableHead>
+                              <TableHead className="w-[80px] font-semibold text-right">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {company.projects.map((project) => (
+                              <TableRow key={project.id} className="group">
+                                <TableCell>
+                                  <div>
+                                    <p className="font-medium">{project.projectName}</p>
+                                    {project.description && (
+                                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{project.description}</p>
+                                    )}
+                                  </div>
+                                </TableCell>
+                                <TableCell><span className="text-sm text-muted-foreground">{project.projectType ?? "-"}</span></TableCell>
+                                <TableCell className="text-right font-medium">{project.totalValue ? formatCurrency(project.totalValue) : "-"}</TableCell>
+                                <TableCell>
+                                  <Badge variant="secondary" className={`${PROJECT_STATUS_COLORS[project.status]} font-normal gap-1`}>
+                                    {PROJECT_STATUS_ICONS[project.status]}
+                                    {project.status.replace(/_/g, " ")}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell><span className="text-sm text-muted-foreground">{project.deadline ? formatDate(project.deadline) : "-"}</span></TableCell>
+                                <TableCell>
+                                  <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditProject(project)}>
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => openDeleteProject(project)}>
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </CardContent>
+                  </Card>
+                </SortableCard>
+              );
+            }
+
+            return null;
+          })}
+        </SortableContext>
+      </DndContext>
 
       {/* Contact Dialog */}
       <Dialog open={contactDialogOpen} onOpenChange={setContactDialogOpen}>
