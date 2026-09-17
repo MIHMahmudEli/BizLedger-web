@@ -3,20 +3,17 @@
 import React, { useEffect, useState } from "react";
 import api from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Building2,
   FolderKanban,
-  CreditCard,
+  DollarSign,
   TrendingUp,
   AlertTriangle,
   CheckCircle,
   Clock,
+  ArrowUpRight,
+  Wallet,
 } from "lucide-react";
 import {
   BarChart,
@@ -38,6 +35,13 @@ const COLORS = {
   PAID: "#22c55e",
   OVERPAID: "#3b82f6",
 };
+
+const STATUS_CONFIG = [
+  { key: "UNPAID", label: "Unpaid", color: "bg-red-500", textColor: "text-red-600 dark:text-red-400", bgColor: "bg-red-500/10" },
+  { key: "PARTIALLY_PAID", label: "Partial", color: "bg-amber-500", textColor: "text-amber-600 dark:text-amber-400", bgColor: "bg-amber-500/10" },
+  { key: "PAID", label: "Paid", color: "bg-emerald-500", textColor: "text-emerald-600 dark:text-emerald-400", bgColor: "bg-emerald-500/10" },
+  { key: "OVERPAID", label: "Overpaid", color: "bg-blue-500", textColor: "text-blue-600 dark:text-blue-400", bgColor: "bg-blue-500/10" },
+];
 
 export default function DashboardPage() {
   const [report, setReport] = useState<DashboardReport | null>(null);
@@ -79,144 +83,238 @@ export default function DashboardPage() {
     { name: "Completed", value: report.completedProjects, fill: "#22c55e" },
   ];
 
+  const collectionRate = report.totalProjectValue > 0
+    ? ((report.totalPaid / report.totalProjectValue) * 100).toFixed(1)
+    : "0";
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Overview of your business metrics
-        </p>
+        <p className="text-muted-foreground">Overview of your business metrics</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Companies</CardTitle>
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{report.totalCompanies}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Projects</CardTitle>
-            <FolderKanban className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{report.totalProjects}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Project Value</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(report.totalProjectValue)}
+      {/* Primary Stats */}
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="pt-5 pb-5 px-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 shrink-0">
+                <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Companies</p>
+                <p className="text-2xl font-bold">{report.totalCompanies}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Due</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600">
-              {formatCurrency(report.totalDue)}
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="pt-5 pb-5 px-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-500/10 shrink-0">
+                <FolderKanban className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Projects</p>
+                <p className="text-2xl font-bold">{report.totalProjects}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Paid</CardTitle>
-            <CheckCircle className="h-4 w-4 text-emerald-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-emerald-600">
-              {formatCurrency(report.totalPaid)}
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="pt-5 pb-5 px-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0">
+                <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Total Value</p>
+                <p className="text-xl font-bold truncate">{formatCurrency(report.totalProjectValue)}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
-            <Clock className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{report.activeProjects}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Completed Projects</CardTitle>
-            <CheckCircle className="h-4 w-4 text-emerald-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{report.completedProjects}</div>
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="pt-5 pb-5 px-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-500/10 shrink-0">
+                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Total Due</p>
+                <p className="text-xl font-bold text-red-600 dark:text-red-400 truncate">{formatCurrency(report.totalDue)}</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
 
+      {/* Secondary Stats */}
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="pt-5 pb-5 px-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0">
+                <Wallet className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Total Paid</p>
+                <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400 truncate">{formatCurrency(report.totalPaid)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="pt-5 pb-5 px-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-500/10 shrink-0">
+                <Clock className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Active</p>
+                <p className="text-2xl font-bold">{report.activeProjects}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="pt-5 pb-5 px-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0">
+                <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Completed</p>
+                <p className="text-2xl font-bold">{report.completedProjects}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="hover:shadow-md transition-shadow">
+          <CardContent className="pt-5 pb-5 px-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 shrink-0">
+                <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs text-muted-foreground">Collection Rate</p>
+                <p className="text-2xl font-bold">{collectionRate}%</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Payment Status Cards */}
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        {STATUS_CONFIG.map(({ key, label, color, textColor, bgColor }) => {
+          const count = key === "UNPAID" ? report.unpaidProjects
+            : key === "PARTIALLY_PAID" ? report.partiallyPaidProjects
+            : key === "PAID" ? report.paidProjects
+            : report.overpaidProjects;
+          return (
+            <Card key={key} className="hover:shadow-md transition-shadow">
+              <CardContent className="pt-5 pb-5 px-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground">{label}</p>
+                    <p className={`text-2xl font-bold ${textColor}`}>{count}</p>
+                  </div>
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${bgColor}`}>
+                    <div className={`h-3 w-3 rounded-full ${color}`} />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Charts */}
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
-          <CardHeader>
-            <CardTitle>Payment Status Distribution</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
+            <h3 className="text-lg font-semibold mb-4">Payment Distribution</h3>
             {report.totalProjects > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
                   <Pie
                     data={paymentStatusData}
                     cx="50%"
                     cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) =>
-                      `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
-                    }
+                    innerRadius={60}
                     outerRadius={100}
+                    paddingAngle={4}
                     dataKey="value"
                   >
                     {paymentStatusData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--popover))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                      fontSize: "12px",
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex h-[300px] items-center justify-center text-muted-foreground">
-                No projects yet
+              <div className="flex h-[280px] items-center justify-center text-muted-foreground">
+                No data yet
               </div>
             )}
+            <div className="flex flex-wrap justify-center gap-4 mt-4">
+              {paymentStatusData.map((item) => (
+                <div key={item.name} className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
+                  <span className="text-xs text-muted-foreground">{item.name}</span>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
         <Card>
-          <CardHeader>
-            <CardTitle>Project Status</CardTitle>
-          </CardHeader>
-          <CardContent>
+          <CardContent className="pt-6">
+            <h3 className="text-lg font-semibold mb-4">Project Status</h3>
             {report.totalProjects > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={projectStatusData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="value" radius={[4, 4, 0, 0]} />
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={projectStatusData} barSize={40}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--popover))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                      fontSize: "12px",
+                    }}
+                  />
+                  <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                    {projectStatusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex h-[300px] items-center justify-center text-muted-foreground">
-                No projects yet
+              <div className="flex h-[280px] items-center justify-center text-muted-foreground">
+                No data yet
               </div>
             )}
+            <div className="flex justify-center gap-6 mt-4">
+              {projectStatusData.map((item) => (
+                <div key={item.name} className="flex items-center gap-2">
+                  <div className="h-3 w-3 rounded-full" style={{ backgroundColor: item.fill }} />
+                  <span className="text-xs text-muted-foreground">{item.name}</span>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </div>
