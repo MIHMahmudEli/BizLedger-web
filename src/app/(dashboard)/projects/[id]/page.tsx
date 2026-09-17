@@ -17,7 +17,6 @@ import {
   StopCircle,
   Inbox,
   Building2,
-  GripVertical,
   Phone,
   Mail,
   Globe,
@@ -137,7 +136,7 @@ const SECTION_LABELS: Record<SectionId | BottomSectionId, string> = {
   payments: "Payments",
 };
 
-function SortableCard({ id, children }: { id: SectionId | BottomSectionId; children: React.ReactNode }) {
+function SortableCard({ id, header, children }: { id: SectionId | BottomSectionId; header: React.ReactNode; children: React.ReactNode }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -146,11 +145,9 @@ function SortableCard({ id, children }: { id: SectionId | BottomSectionId; child
     zIndex: isDragging ? 50 : "auto" as const,
   };
   return (
-    <div ref={setNodeRef} style={style} className="relative group/card">
-      <div {...attributes} {...listeners} className="absolute top-3 right-3 z-10 cursor-grab active:cursor-grabbing opacity-0 group-hover/card:opacity-100 transition-opacity">
-        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-background border shadow-sm hover:bg-accent">
-          <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
-        </div>
+    <div ref={setNodeRef} style={style} className="relative">
+      <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing">
+        {header}
       </div>
       {children}
     </div>
@@ -453,10 +450,9 @@ export default function ProjectDetailPage() {
             {sectionOrder.map((sectionId) => {
               if (sectionId === "project-details") {
                 return (
-                  <SortableCard key={sectionId} id={sectionId}>
+                  <SortableCard key={sectionId} id={sectionId} header={<div className="px-6 pt-5 pb-2"><h2 className="text-lg font-semibold">Project Details</h2></div>}>
                     <Card>
-                      <CardContent className="pt-6">
-                        <h2 className="text-lg font-semibold mb-4">Project Details</h2>
+                      <CardContent className="pt-0 pb-6">
                         <div className="space-y-3">
                           {[
                             { label: "Name", value: project.projectName },
@@ -485,10 +481,9 @@ export default function ProjectDetailPage() {
 
               if (sectionId === "financial") {
                 return (
-                  <SortableCard key={sectionId} id={sectionId}>
+                  <SortableCard key={sectionId} id={sectionId} header={<div className="px-6 pt-5 pb-2"><h2 className="text-lg font-semibold">Financial Summary</h2></div>}>
                     <Card>
-                      <CardContent className="pt-6">
-                        <h2 className="text-lg font-semibold mb-4">Financial Summary</h2>
+                      <CardContent className="pt-0 pb-6">
                         <div className="space-y-3">
                           <div className="flex items-center justify-between py-2 border-b border-border/50">
                             <span className="text-sm text-muted-foreground">Total Value</span>
@@ -531,10 +526,10 @@ export default function ProjectDetailPage() {
           {bottomSectionOrder.map((sectionId) => {
             if (sectionId === "company" && company) {
               return (
-                <SortableCard key={sectionId} id={sectionId}>
+                <SortableCard key={sectionId} id={sectionId} header={
                   <Card className="overflow-hidden">
                     <CardContent className="p-0">
-                      <div className="flex items-center justify-between p-5 border-b">
+                      <div className="flex items-center justify-between p-5">
                         <div className="flex items-center gap-4">
                           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 shrink-0">
                             <Building2 className="h-6 w-6 text-primary" />
@@ -551,10 +546,15 @@ export default function ProjectDetailPage() {
                             </div>
                           </div>
                         </div>
-                        <Button variant="outline" size="sm" asChild className="gap-1.5">
+                        <Button variant="outline" size="sm" asChild className="gap-1.5" onClick={(e) => e.stopPropagation()}>
                           <a href={`/companies/${company.id}`}>View Details<ArrowLeft className="h-3 w-3 rotate-180" /></a>
                         </Button>
                       </div>
+                    </CardContent>
+                  </Card>
+                }>
+                  <Card className="overflow-hidden">
+                    <CardContent className="p-0">
                       <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x">
                         <div className="p-5 space-y-4">
                           <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Information</h3>
@@ -620,18 +620,23 @@ export default function ProjectDetailPage() {
 
             if (sectionId === "payments") {
               return (
-                <SortableCard key={sectionId} id={sectionId}>
+                <SortableCard key={sectionId} id={sectionId} header={
                   <Card>
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between mb-4">
+                    <CardContent className="pt-5 pb-2">
+                      <div className="flex items-center justify-between">
                         <div>
                           <h2 className="text-lg font-semibold">Payments</h2>
                           <p className="text-sm text-muted-foreground">{paymentMeta.total} transactions</p>
                         </div>
-                        <Button size="sm" onClick={openAddPaymentDialog} className="gap-1.5">
+                        <Button size="sm" onClick={(e) => { e.stopPropagation(); openAddPaymentDialog(); }} className="gap-1.5">
                           <Plus className="h-4 w-4" />Add Payment
                         </Button>
                       </div>
+                    </CardContent>
+                  </Card>
+                }>
+                  <Card>
+                    <CardContent className="pt-0 pb-6">
                       {paymentsLoading ? (
                         <div className="space-y-3">
                           {[1, 2, 3].map((i) => (
