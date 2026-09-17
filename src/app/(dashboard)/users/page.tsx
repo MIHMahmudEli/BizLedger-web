@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Users, Shield, ArrowUpCircle, ArrowDownCircle, Crown, Plus, Loader2 } from "lucide-react";
+import { Users, Shield, ArrowUpCircle, ArrowDownCircle, Crown, Plus, Loader2, Trash2 } from "lucide-react";
 import api from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -81,6 +81,10 @@ export default function UsersPage() {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState("");
 
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingUser, setDeletingUser] = useState<UserItem | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
@@ -133,6 +137,25 @@ export default function UsersPage() {
       setError(err.response?.data?.message || "Failed to create user");
     } finally {
       setCreating(false);
+    }
+  };
+
+  const openDeleteDialog = (user: UserItem) => {
+    setDeletingUser(user);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deletingUser) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/users/${deletingUser.id}`);
+      setDeleteDialogOpen(false);
+      fetchUsers();
+    } catch (err: any) {
+      console.error("Failed to delete user:", err);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -254,6 +277,10 @@ export default function UsersPage() {
                                 Demote
                               </Button>
                             )}
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={() => openDeleteDialog(user)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </>
                         )}
                       </div>
@@ -350,6 +377,25 @@ export default function UsersPage() {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleRoleChange} disabled={updating}>
               {updating ? "Updating..." : "Confirm"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete User Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete User</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete <strong>{deletingUser?.name}</strong>? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDeleteUser} disabled={deleting}>
+              {deleting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Delete
             </Button>
           </DialogFooter>
         </DialogContent>
