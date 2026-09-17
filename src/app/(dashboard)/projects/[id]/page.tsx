@@ -154,7 +154,7 @@ function SortableCard({
   };
   return (
     <Card ref={setNodeRef} style={style} className="relative group/section">
-      <CardHeader className="flex flex-row items-center gap-3 pb-4 border-b cursor-grab active:cursor-grabbing" {...attributes} {...listeners}>
+      <CardHeader className="flex flex-row items-center gap-3 pb-3 border-b cursor-grab active:cursor-grabbing" {...attributes} {...listeners}>
         {icon && <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 shrink-0">{icon}</div>}
         <div className="flex-1 min-w-0">
           <h3 className="text-base font-semibold leading-none">{title}</h3>
@@ -167,7 +167,7 @@ function SortableCard({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-0">{children}</CardContent>
+      <CardContent className="pt-4">{children}</CardContent>
     </Card>
   );
 }
@@ -496,27 +496,18 @@ export default function ProjectDetailPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x">
                       <div className="pr-6 pb-4 md:pb-0 space-y-4">
                         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Information</h4>
-                        <div className="space-y-3">
-                          {company.address && (
-                            <div className="flex items-start gap-3">
-                              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted shrink-0"><MapPin className="h-4 w-4 text-muted-foreground" /></div>
-                              <div>
-                                <p className="text-xs text-muted-foreground">Address</p>
-                                <p className="text-sm">{company.address}</p>
-                                {company.addressArea && <p className="text-sm text-muted-foreground">{company.addressArea}</p>}
+                          <div className="space-y-3">
+                            {company.address && (
+                              <div className="flex items-start gap-3">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted shrink-0"><MapPin className="h-4 w-4 text-muted-foreground" /></div>
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Address</p>
+                                  <p className="text-sm">{company.address}</p>
+                                  {company.addressArea && <p className="text-sm text-muted-foreground">{company.addressArea}</p>}
+                                </div>
                               </div>
-                            </div>
-                          )}
-                          {company.website && (
-                            <div className="flex items-start gap-3">
-                              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted shrink-0"><Globe className="h-4 w-4 text-muted-foreground" /></div>
-                              <div>
-                                <p className="text-xs text-muted-foreground">Website</p>
-                                <a href={company.website.startsWith("http") ? company.website : `https://${company.website}`} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline break-all">{company.website}</a>
-                              </div>
-                            </div>
-                          )}
-                        </div>
+                            )}
+                          </div>
                       </div>
                       <div className="pl-0 md:pl-6 pt-4 md:pt-0 space-y-4">
                         <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Key Contacts</h4>

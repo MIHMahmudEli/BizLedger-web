@@ -154,7 +154,7 @@ function SortableCard({
   };
   return (
     <Card ref={setNodeRef} style={style} className="relative group/section">
-      <CardHeader className="flex flex-row items-center gap-3 pb-4 border-b cursor-grab active:cursor-grabbing" {...attributes} {...listeners}>
+      <CardHeader className="flex flex-row items-center gap-3 pb-3 border-b cursor-grab active:cursor-grabbing" {...attributes} {...listeners}>
         {icon && <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 shrink-0">{icon}</div>}
         <div className="flex-1 min-w-0">
           <h3 className="text-base font-semibold leading-none">{title}</h3>
@@ -167,7 +167,7 @@ function SortableCard({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-0">{children}</CardContent>
+      <CardContent className="pt-4">{children}</CardContent>
     </Card>
   );
 }
