@@ -175,9 +175,12 @@ export default function ProjectsPage() {
       const params: Record<string, string | number> = { page, limit, search: debouncedSearch };
       if (filterType) params.projectType = filterType;
       if (filterStatus) params.status = filterStatus;
-      if (filterPaymentStatus) params.paymentStatus = filterPaymentStatus;
       const response = await api.get<PaginatedResponse<ProjectRow>>("/projects", { params });
-      setProjects(response.data.data);
+      let filtered = response.data.data;
+      if (filterPaymentStatus) {
+        filtered = filtered.filter((p) => p.financial?.paymentStatus === filterPaymentStatus);
+      }
+      setProjects(filtered);
       setMeta(response.data.meta);
     } catch (error) {
       console.error("Failed to fetch projects:", error);
