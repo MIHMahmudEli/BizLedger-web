@@ -17,6 +17,12 @@ import {
   XCircle,
   StopCircle,
   Inbox,
+  Building2,
+  Phone,
+  Mail,
+  Globe,
+  MapPin,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -47,7 +53,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import api from "@/lib/api";
-import { Project, ProjectFinancial, ProjectStatus, Payment, PaymentMethod, PaginatedResponse } from "@/types";
+import { Project, ProjectFinancial, ProjectStatus, Payment, PaymentMethod, PaginatedResponse, Company, Contact } from "@/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
@@ -119,6 +125,8 @@ export default function ProjectDetailPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [company, setCompany] = useState<Company | null>(null);
+  const [contacts, setContacts] = useState<Contact[]>([]);
 
   useEffect(() => { fetchProject(); fetchPayments(); }, [projectId]);
 
@@ -127,7 +135,25 @@ export default function ProjectDetailPage() {
     try {
       const response = await api.get<{ data: Project & { financial?: ProjectFinancial } }>(`/projects/${projectId}`);
       setProject(response.data.data);
+      if (response.data.data.companyId) {
+        fetchCompany(response.data.data.companyId);
+      }
     } catch (error) { console.error("Failed to fetch project:", error); } finally { setLoading(false); }
+  };
+
+  const fetchCompany = async (companyId: string) => {
+    try {
+      const response = await api.get<{ data: Company }>(`/companies/${companyId}`);
+      setCompany(response.data.data);
+      fetchContacts(companyId);
+    } catch (error) { console.error("Failed to fetch company:", error); }
+  };
+
+  const fetchContacts = async (companyId: string) => {
+    try {
+      const response = await api.get<PaginatedResponse<Contact>>(`/companies/${companyId}/contacts`, { params: { limit: 10 } });
+      setContacts(response.data.data);
+    } catch (error) { console.error("Failed to fetch contacts:", error); }
   };
 
   const fetchPayments = async (paymentPage = 1) => {
@@ -321,6 +347,85 @@ export default function ProjectDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Company Details Card */}
+      {company && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 shrink-0">
+                  <Building2 className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold">{company.companyName}</h2>
+                  {company.category && <p className="text-sm text-muted-foreground">{company.category}</p>}
+                </div>
+              </div>
+              <Button variant="outline" size="sm" asChild>
+                <a href={`/companies/${company.id}`}>View Company</a>
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Company Info */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-medium text-muted-foreground">Company Information</h3>
+                <div className="space-y-2">
+                  {company.address && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span>{company.address}{company.addressArea ? `, ${company.addressArea}` : ""}</span>
+                    </div>
+                  )}
+                  {company.website && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <a href={company.website.startsWith("http") ? company.website : `https://${company.website}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{company.website}</a>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Contacts */}
+              <div className="space-y-3">
+                <h3 className="text-sm font-medium text-muted-foreground">Contacts</h3>
+                {contacts.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No contacts found</p>
+                ) : (
+                  <div className="space-y-3">
+                    {contacts.slice(0, 3).map((contact) => (
+                      <div key={contact.id} className="flex items-start gap-3 p-2 rounded-lg bg-muted/50">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 shrink-0">
+                          <User className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">{contact.name}</p>
+                          {contact.designation && <p className="text-xs text-muted-foreground">{contact.designation}</p>}
+                          <div className="flex items-center gap-3 mt-1">
+                            {contact.mobile && (
+                              <a href={`tel:${contact.mobile}`} className="flex items-center gap-1 text-xs text-primary hover:underline">
+                                <Phone className="h-3 w-3" />
+                                {contact.mobile}
+                              </a>
+                            )}
+                            {contact.email && (
+                              <a href={`mailto:${contact.email}`} className="flex items-center gap-1 text-xs text-primary hover:underline">
+                                <Mail className="h-3 w-3" />
+                                {contact.email}
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Payments Section */}
       <Card>
