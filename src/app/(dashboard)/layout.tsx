@@ -1,6 +1,7 @@
 "use client";
 
 import { AuthProvider, useAuth } from "@/lib/auth-context";
+import { NotificationProvider } from "@/lib/notification-context";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { useRouter, usePathname } from "next/navigation";
@@ -41,13 +42,15 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen">
-      <Sidebar />
-      <div className="md:pl-64">
-        <Header />
-        <main className="p-4 md:p-6 lg:p-8">{children}</main>
+    <NotificationProvider>
+      <div className="min-h-screen">
+        <Sidebar />
+        <div className="md:pl-64">
+          <Header />
+          <main className="p-4 md:p-6 lg:p-8">{children}</main>
+        </div>
       </div>
-    </div>
+    </NotificationProvider>
   );
 }
 

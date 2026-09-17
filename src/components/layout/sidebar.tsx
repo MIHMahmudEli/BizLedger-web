@@ -16,9 +16,11 @@ import {
   Sun,
   Moon,
   Monitor,
+  Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
+import { useNotifications } from "@/lib/notification-context";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +33,7 @@ const navItems = [
   { href: "/projects", label: "Projects", icon: FolderKanban, roles: ["ADMIN", "MANAGER", "STAFF"] },
   { href: "/payments", label: "Payments", icon: CreditCard, roles: ["ADMIN", "MANAGER", "STAFF"] },
   { href: "/reports", label: "Reports", icon: BarChart3, roles: ["ADMIN", "MANAGER"] },
+  { href: "/notifications", label: "Notifications", icon: Bell, roles: ["ADMIN", "MANAGER", "STAFF"] },
   { href: "/users", label: "Users", icon: Shield, roles: ["ADMIN"] },
 ];
 
@@ -50,6 +53,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const { logout, user } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { unreadCount } = useNotifications();
 
   const visibleItems = navItems.filter(
     (item) => user && item.roles.includes(user.role)
@@ -88,6 +92,14 @@ export function Sidebar() {
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
                       {item.label}
+                      {item.href === "/notifications" && unreadCount > 0 && (
+                        <Badge
+                          variant="destructive"
+                          className="ml-auto h-5 min-w-5 flex items-center justify-center p-0 text-xs"
+                        >
+                          {unreadCount > 99 ? "99+" : unreadCount}
+                        </Badge>
+                      )}
                     </Link>
                   </TooltipTrigger>
                   <TooltipContent side="right">{item.label}</TooltipContent>

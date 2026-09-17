@@ -125,3 +125,22 @@ export interface OutstandingProject {
   paymentStatus: string;
   companyName: string;
 }
+
+export type NotificationType =
+  | "PAYMENT_RECEIVED"
+  | "PROJECT_CREATED"
+  | "PROJECT_STATUS_CHANGED"
+  | "USER_CREATED"
+  | "USER_ROLE_CHANGED"
+  | "DEADLINE_APPROACHING";
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  link?: string;
+  isRead: boolean;
+  createdAt: string;
+}
