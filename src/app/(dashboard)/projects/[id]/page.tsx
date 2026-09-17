@@ -530,7 +530,7 @@ export default function ProjectDetailPage() {
                                     {contact.email && (
                                       <a href={`mailto:${contact.email}`} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors">
                                         <div className="flex h-4 w-4 items-center justify-center rounded bg-blue-500/10"><Mail className="h-2.5 w-2.5 text-blue-600 dark:text-blue-400" /></div>
-                                        <span className="truncate max-w-[120px]">{contact.email}</span>
+                                        <span className="break-all">{contact.email}</span>
                                       </a>
                                     )}
                                   </div>
