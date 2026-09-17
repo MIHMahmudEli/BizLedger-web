@@ -5,6 +5,7 @@ import Link from "next/link";
 import api from "@/lib/api";
 import { formatCurrency } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Building2,
   FolderKanban,
@@ -58,8 +59,70 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-8 w-32 mb-2" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardContent className="pt-5 pb-5 px-4">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-11 w-11 rounded-xl" />
+                  <div className="flex-1">
+                    <Skeleton className="h-3 w-16 mb-2" />
+                    <Skeleton className="h-7 w-20" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardContent className="pt-5 pb-5 px-4">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-11 w-11 rounded-xl" />
+                  <div className="flex-1">
+                    <Skeleton className="h-3 w-16 mb-2" />
+                    <Skeleton className="h-7 w-20" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardContent className="pt-5 pb-5 px-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Skeleton className="h-3 w-16 mb-2" />
+                    <Skeleton className="h-7 w-12" />
+                  </div>
+                  <Skeleton className="h-10 w-10 rounded-lg" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card>
+            <CardContent className="pt-6">
+              <Skeleton className="h-5 w-40 mb-4" />
+              <Skeleton className="h-[280px] w-full rounded-lg" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <Skeleton className="h-5 w-32 mb-4" />
+              <Skeleton className="h-[280px] w-full rounded-lg" />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }

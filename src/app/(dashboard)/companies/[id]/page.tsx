@@ -11,12 +11,12 @@ import {
   FileText,
   Globe,
   Inbox,
-  Loader2,
   Mail,
   MapPin,
   Phone,
   Plus,
   StopCircle,
+  Tag,
   Trash2,
   XCircle,
 } from "lucide-react";
@@ -25,6 +25,7 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dialog,
   DialogContent,
@@ -180,8 +181,59 @@ export default function CompanyDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      <div className="space-y-6">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-10 w-10" />
+          <div>
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card>
+            <CardContent className="pt-6">
+              <Skeleton className="h-5 w-32 mb-4" />
+              <div className="space-y-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex justify-between">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <Skeleton className="h-5 w-24 mb-4" />
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <Skeleton className="h-8 w-8 rounded-full" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-28 mb-1" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <Skeleton className="h-5 w-20 mb-4" />
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <Skeleton className="h-9 w-9 rounded-lg" />
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-4 w-20 ml-auto" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -271,6 +323,49 @@ export default function CompanyDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Company Info */}
+      <Card>
+        <CardContent className="pt-6">
+          <h2 className="text-lg font-semibold mb-4">Company Information</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {company.category && (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 shrink-0">
+                  <Tag className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Category</p>
+                  <p className="text-sm font-medium">{company.category}</p>
+                </div>
+              </div>
+            )}
+            {company.address && (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 shrink-0">
+                  <MapPin className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Address</p>
+                  <p className="text-sm font-medium">{company.address}</p>
+                  {company.addressArea && <p className="text-xs text-muted-foreground">{company.addressArea}</p>}
+                </div>
+              </div>
+            )}
+            {company.website && (
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10 shrink-0">
+                  <Globe className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Website</p>
+                  <a href={company.website.startsWith("http") ? company.website : `https://${company.website}`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:underline">{company.website}</a>
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Contacts Section */}
       <Card>

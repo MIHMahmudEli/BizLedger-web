@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -62,6 +63,7 @@ export default function NotificationsPage() {
   const {
     notifications,
     meta,
+    loading,
     fetchNotifications,
     markAsRead,
     markAllAsRead,
@@ -169,7 +171,39 @@ export default function NotificationsPage() {
             </div>
           </div>
 
-          {filteredNotifications.length === 0 ? (
+          {loading ? (
+            <div className="p-4">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="w-12"></TableHead>
+                    <TableHead className="w-12"></TableHead>
+                    <TableHead className="font-semibold">Type</TableHead>
+                    <TableHead className="font-semibold">Message</TableHead>
+                    <TableHead className="font-semibold">Date</TableHead>
+                    <TableHead className="font-semibold">Status</TableHead>
+                    <TableHead className="w-20 font-semibold">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <TableRow key={i}>
+                      <TableCell><Skeleton className="h-4 w-4" /></TableCell>
+                      <TableCell><Skeleton className="h-6 w-6 rounded" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-24 rounded-full" /></TableCell>
+                      <TableCell>
+                        <Skeleton className="h-4 w-40 mb-1" />
+                        <Skeleton className="h-3 w-56" />
+                      </TableCell>
+                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-14 rounded-full" /></TableCell>
+                      <TableCell><Skeleton className="h-6 w-14" /></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : filteredNotifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
               <Inbox className="h-12 w-12 mb-4 opacity-40" />
               <p className="text-lg font-medium">No notifications</p>
