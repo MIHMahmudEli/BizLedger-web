@@ -103,7 +103,7 @@ export default function DashboardPage() {
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-500/10 shrink-0">
                 <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-xs text-muted-foreground">Companies</p>
                 <p className="text-2xl font-bold">{report.totalCompanies}</p>
               </div>
@@ -116,7 +116,7 @@ export default function DashboardPage() {
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-500/10 shrink-0">
                 <FolderKanban className="h-5 w-5 text-violet-600 dark:text-violet-400" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-xs text-muted-foreground">Projects</p>
                 <p className="text-2xl font-bold">{report.totalProjects}</p>
               </div>
@@ -129,9 +129,9 @@ export default function DashboardPage() {
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0">
                 <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-xs text-muted-foreground">Total Value</p>
-                <p className="text-xl font-bold truncate">{formatCurrency(report.totalProjectValue)}</p>
+                <p className="text-base lg:text-lg font-bold break-words">{formatCurrency(report.totalProjectValue)}</p>
               </div>
             </div>
           </CardContent>
@@ -142,9 +142,9 @@ export default function DashboardPage() {
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-500/10 shrink-0">
                 <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-xs text-muted-foreground">Total Due</p>
-                <p className="text-xl font-bold text-red-600 dark:text-red-400 truncate">{formatCurrency(report.totalDue)}</p>
+                <p className="text-base lg:text-lg font-bold text-red-600 dark:text-red-400 break-words">{formatCurrency(report.totalDue)}</p>
               </div>
             </div>
           </CardContent>
@@ -159,9 +159,9 @@ export default function DashboardPage() {
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0">
                 <Wallet className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-xs text-muted-foreground">Total Paid</p>
-                <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400 truncate">{formatCurrency(report.totalPaid)}</p>
+                <p className="text-base lg:text-lg font-bold text-emerald-600 dark:text-emerald-400 break-words">{formatCurrency(report.totalPaid)}</p>
               </div>
             </div>
           </CardContent>

@@ -215,9 +215,9 @@ export default function ProjectDetailPage() {
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 shrink-0">
                 <DollarSign className="h-5 w-5 text-primary" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-xs text-muted-foreground">Total Value</p>
-                <p className="text-lg font-bold truncate">{formatCurrency(project.totalValue)}</p>
+                <p className="text-sm lg:text-base font-bold break-words">{formatCurrency(project.totalValue)}</p>
               </div>
             </div>
           </CardContent>
@@ -228,9 +228,9 @@ export default function ProjectDetailPage() {
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 shrink-0">
                 <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-xs text-muted-foreground">Total Paid</p>
-                <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400 truncate">{formatCurrency(financial?.totalPaid ?? 0)}</p>
+                <p className="text-sm lg:text-base font-bold text-emerald-600 dark:text-emerald-400 break-words">{formatCurrency(financial?.totalPaid ?? 0)}</p>
               </div>
             </div>
           </CardContent>
@@ -241,9 +241,9 @@ export default function ProjectDetailPage() {
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10 shrink-0">
                 <Clock className="h-5 w-5 text-red-600 dark:text-red-400" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-xs text-muted-foreground">Due</p>
-                <p className="text-lg font-bold text-red-600 dark:text-red-400 truncate">{formatCurrency(financial?.due ?? 0)}</p>
+                <p className="text-sm lg:text-base font-bold text-red-600 dark:text-red-400 break-words">{formatCurrency(financial?.due ?? 0)}</p>
               </div>
             </div>
           </CardContent>
@@ -254,9 +254,9 @@ export default function ProjectDetailPage() {
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 shrink-0">
                 <CreditCard className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <p className="text-xs text-muted-foreground">Payments</p>
-                <p className="text-lg font-bold truncate">{financial?.paymentCount ?? 0}</p>
+                <p className="text-sm lg:text-base font-bold">{financial?.paymentCount ?? 0}</p>
               </div>
             </div>
           </CardContent>
