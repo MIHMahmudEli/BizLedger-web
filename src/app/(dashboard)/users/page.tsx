@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Users, Shield, ArrowUpCircle, ArrowDownCircle, Crown, Plus, Loader2, Trash2 } from "lucide-react";
+import { Users, Shield, ArrowUpCircle, ArrowDownCircle, Crown, Plus, Loader2, Trash2, UserCheck, UserX } from "lucide-react";
 import api from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -159,6 +159,15 @@ export default function UsersPage() {
     }
   };
 
+  const handleToggleStatus = async (user: UserItem) => {
+    try {
+      await api.patch(`/users/${user.id}/status`);
+      fetchUsers();
+    } catch (err: any) {
+      console.error("Failed to toggle status:", err);
+    }
+  };
+
   const roleCounts = {
     ADMIN: users.filter((u) => u.role === "ADMIN").length,
     MANAGER: users.filter((u) => u.role === "MANAGER").length,
@@ -250,9 +259,18 @@ export default function UsersPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={user.isActive ? "success" : "destructive"} className="font-normal">
+                      <button
+                        onClick={() => user.role !== "ADMIN" && handleToggleStatus(user)}
+                        disabled={user.role === "ADMIN"}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-normal transition-colors ${
+                          user.isActive
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200 hover:bg-emerald-200 dark:hover:bg-emerald-800"
+                            : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-800"
+                        } ${user.role === "ADMIN" ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+                      >
+                        {user.isActive ? <UserCheck className="h-3 w-3" /> : <UserX className="h-3 w-3" />}
                         {user.isActive ? "Active" : "Inactive"}
-                      </Badge>
+                      </button>
                     </TableCell>
                     <TableCell>
                       <span className="text-sm text-muted-foreground">{formatDate(user.createdAt)}</span>
