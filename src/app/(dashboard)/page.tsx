@@ -147,8 +147,10 @@ export default function DashboardPage() {
     { name: "Completed", value: report.completedProjects, fill: "#22c55e" },
   ];
 
-  const collectionRate = report.totalProjectValue > 0
-    ? ((report.totalPaid / report.totalProjectValue) * 100).toFixed(1)
+  const totalVal = parseFloat(report.totalProjectValue) || 0;
+  const totalPaid = parseFloat(report.totalPaid) || 0;
+  const collectionRate = totalVal > 0
+    ? ((totalPaid / totalVal) * 100).toFixed(1)
     : "0";
 
   return (

@@ -160,8 +160,8 @@ function SortableCard({
           <h3 className="text-base font-semibold leading-none">{title}</h3>
           {badge && <div className="mt-1.5">{badge}</div>}
         </div>
-        <div className="flex items-center gap-2 shrink-0 cursor-pointer" onClick={(e) => e.stopPropagation()}>
-          {action}
+        <div className="flex items-center gap-2 shrink-0 !cursor-pointer" onClick={(e) => e.stopPropagation()}>
+          <div className="!cursor-pointer">{action}</div>
           <div className="opacity-0 group-hover/section:opacity-60 transition-opacity ml-1">
             <GripVertical className="h-4 w-4 text-muted-foreground" />
           </div>

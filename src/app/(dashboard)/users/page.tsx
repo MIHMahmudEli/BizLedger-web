@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Users, Shield, ArrowUpCircle, ArrowDownCircle, Crown, Plus, Trash2, UserCheck, UserX } from "lucide-react";
+import { Users, Shield, ArrowUpCircle, ArrowDownCircle, Crown, Plus, Trash2, UserCheck, UserX, Loader2 } from "lucide-react";
 import api from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
