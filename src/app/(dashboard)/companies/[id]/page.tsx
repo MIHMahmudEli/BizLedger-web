@@ -362,7 +362,7 @@ export default function CompanyDetailPage() {
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Website</p>
-                  <a href={company.website.startsWith("http") ? company.website : `https://${company.website}`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:underline break-all">{company.website}</a>
+                  <p className="text-sm font-medium break-all">{company.website}</p>
                 </div>
               </div>
             )}
