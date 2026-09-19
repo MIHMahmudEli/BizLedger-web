@@ -110,14 +110,14 @@ export default function NotificationsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Notifications</h1>
           <p className="text-sm text-muted-foreground">
             {unreadCount > 0 ? `${unreadCount} unread notifications` : "All caught up!"}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {selectedIds.length > 0 && (
             <>
               <Button variant="outline" size="sm" onClick={handleBulkMarkAsRead} className="gap-1.5">
@@ -141,7 +141,7 @@ export default function NotificationsPage() {
 
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-end gap-3 mb-6">
+          <div className="flex items-end gap-3 mb-6 flex-wrap">
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground">Type</label>
               <Select value={filterType} onValueChange={setFilterType}>
@@ -270,7 +270,7 @@ export default function NotificationsPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1">
                         {!notification.isRead && (
                           <Button variant="ghost" size="icon" className="h-7 w-7"
                             onClick={() => markAsRead(notification.id)}>

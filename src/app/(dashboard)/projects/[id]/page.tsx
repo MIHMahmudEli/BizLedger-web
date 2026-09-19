@@ -72,7 +72,7 @@ import {
 } from "@/components/ui/select";
 import api from "@/lib/api";
 import { Project, ProjectFinancial, ProjectStatus, Payment, PaymentMethod, PaginatedResponse, Company, Contact } from "@/types";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatCurrencyCompact, formatDate } from "@/lib/utils";
 
 const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
   PLANNED: "Planned", IN_PROGRESS: "In Progress", ON_HOLD: "On Hold",
@@ -357,7 +357,7 @@ export default function ProjectDetailPage() {
 
       {/* Stats Row */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        <Card>
+        <Card className="col-span-2 lg:col-span-1">
           <CardContent className="pt-5 pb-5 px-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 shrink-0">
@@ -365,12 +365,12 @@ export default function ProjectDetailPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs text-muted-foreground">Total Value</p>
-                <p className="text-sm lg:text-base font-bold break-words">{formatCurrency(project.totalValue)}</p>
+                <p className="text-lg font-bold truncate" title={formatCurrency(project.totalValue)}>{formatCurrencyCompact(project.totalValue)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="col-span-2 lg:col-span-1">
           <CardContent className="pt-5 pb-5 px-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 shrink-0">
@@ -378,12 +378,12 @@ export default function ProjectDetailPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs text-muted-foreground">Total Paid</p>
-                <p className="text-sm lg:text-base font-bold text-emerald-600 dark:text-emerald-400 break-words">{formatCurrency(financial?.totalPaid ?? 0)}</p>
+                <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400 truncate" title={formatCurrency(financial?.totalPaid ?? 0)}>{formatCurrencyCompact(financial?.totalPaid ?? 0)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="col-span-2 lg:col-span-1">
           <CardContent className="pt-5 pb-5 px-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10 shrink-0">
@@ -391,12 +391,12 @@ export default function ProjectDetailPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs text-muted-foreground">Due</p>
-                <p className="text-sm lg:text-base font-bold text-red-600 dark:text-red-400 break-words">{formatCurrency(financial?.due ?? 0)}</p>
+                <p className="text-lg font-bold text-red-600 dark:text-red-400 truncate" title={formatCurrency(financial?.due ?? 0)}>{formatCurrencyCompact(financial?.due ?? 0)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="col-span-2 lg:col-span-1">
           <CardContent className="pt-5 pb-5 px-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 shrink-0">
@@ -404,7 +404,7 @@ export default function ProjectDetailPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs text-muted-foreground">Payments</p>
-                <p className="text-sm lg:text-base font-bold">{financial?.paymentCount ?? 0}</p>
+                <p className="text-lg font-bold">{financial?.paymentCount ?? 0}</p>
               </div>
             </div>
           </CardContent>
@@ -598,7 +598,7 @@ export default function ProjectDetailPage() {
                                 <TableCell><span className="text-sm text-muted-foreground">{payment.reference || "-"}</span></TableCell>
                                 <TableCell><span className="text-sm text-muted-foreground max-w-[150px] truncate block">{payment.note || "-"}</span></TableCell>
                                 <TableCell>
-                                  <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <div className="flex items-center justify-end gap-1">
                                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditPaymentDialog(payment)}><Pencil className="h-4 w-4" /></Button>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => openDeleteDialog(payment.id)}><Trash2 className="h-4 w-4" /></Button>
                                   </div>
@@ -634,7 +634,7 @@ export default function ProjectDetailPage() {
             <DialogTitle>{editingPaymentId ? "Edit Payment" : "Add Payment"}</DialogTitle>
             <DialogDescription>{editingPaymentId ? "Update the payment details below." : "Fill in the details to record a new payment."}</DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2">
             <div className="space-y-2">
               <Label htmlFor="amount">Amount</Label>
               <Input id="amount" type="number" value={paymentForm.amount} onChange={(e) => handlePaymentFormChange("amount", e.target.value)} placeholder="0.00" min="0" step="0.01" />
@@ -643,7 +643,7 @@ export default function ProjectDetailPage() {
               <Label htmlFor="paymentDate">Payment Date</Label>
               <Input id="paymentDate" type="date" value={paymentForm.paymentDate} onChange={(e) => handlePaymentFormChange("paymentDate", e.target.value)} />
             </div>
-            <div className="col-span-2 space-y-2">
+            <div className="sm:col-span-2 space-y-2">
               <Label>Payment Method</Label>
               <Select value={paymentForm.paymentMethod} onValueChange={(value) => handlePaymentFormChange("paymentMethod", value as PaymentMethod)}>
                 <SelectTrigger><SelectValue placeholder="Select method" /></SelectTrigger>
@@ -654,11 +654,11 @@ export default function ProjectDetailPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="col-span-2 space-y-2">
+            <div className="sm:col-span-2 space-y-2">
               <Label htmlFor="reference">Reference</Label>
               <Input id="reference" value={paymentForm.reference} onChange={(e) => handlePaymentFormChange("reference", e.target.value)} placeholder="Transaction reference" />
             </div>
-            <div className="col-span-2 space-y-2">
+            <div className="sm:col-span-2 space-y-2">
               <Label htmlFor="note">Note</Label>
               <textarea id="note" value={paymentForm.note} onChange={(e) => handlePaymentFormChange("note", e.target.value)} placeholder="Payment note" rows={3}
                 className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50" />

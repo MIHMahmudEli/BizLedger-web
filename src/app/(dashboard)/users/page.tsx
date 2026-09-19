@@ -306,7 +306,7 @@ export default function UsersPage() {
                       <span className="text-sm text-muted-foreground">{formatDate(user.createdAt)}</span>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center justify-end gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-1">
                         {user.role === "ADMIN" ? (
                           <span className="text-xs text-muted-foreground">Super Admin</span>
                         ) : (

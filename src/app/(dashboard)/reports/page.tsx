@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { BarChart3, Calendar, CreditCard, FileText, AlertTriangle } from "lucide-react";
+import { Calendar, CreditCard, FileText, DollarSign, Wallet, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,10 +23,15 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import api from "@/lib/api";
-import type { PaginatedResponse, OutstandingProject, Payment, PaymentMethod } from "@/types";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import type { Company, PaginatedResponse, Payment, PaymentMethod, Project, ProjectFinancial } from "@/types";
+import { formatCurrency, formatCurrencyCompact, formatDate } from "@/lib/utils";
 
-type Tab = "outstanding" | "payments";
+const REPORT_TABS = [
+  { value: "payments", label: "Payment Report" },
+  { value: "details", label: "Details Report" },
+] as const;
+
+type ReportTab = (typeof REPORT_TABS)[number]["value"];
 
 const PAYMENT_METHODS: { value: PaymentMethod | "ALL"; label: string }[] = [
   { value: "ALL", label: "All Methods" },
@@ -36,13 +41,6 @@ const PAYMENT_METHODS: { value: PaymentMethod | "ALL"; label: string }[] = [
   { value: "MOBILE_BANKING", label: "Mobile Banking" },
   { value: "CHEQUE", label: "Cheque" },
   { value: "OTHER", label: "Other" },
-];
-
-const PROJECT_TYPES = [
-  "Web Development", "Mobile App", "Desktop Application", "E-Commerce",
-  "ERP System", "CRM System", "UI/UX Design", "API Development",
-  "Cloud Migration", "DevOps", "Data Analytics", "AI/ML",
-  "Consulting", "Maintenance", "Other",
 ];
 
 const METHOD_COLORS: Record<PaymentMethod, string> = {
@@ -59,247 +57,36 @@ const METHOD_LABELS: Record<PaymentMethod, string> = {
   MOBILE_BANKING: "Mobile Banking", CHEQUE: "Cheque", OTHER: "Other",
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  UNPAID: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
-  PARTIALLY_PAID: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
-  PAID: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200",
-  OVERPAID: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  UNPAID: "Unpaid", PARTIALLY_PAID: "Partial", PAID: "Paid", OVERPAID: "Overpaid",
-};
-
 export default function ReportsPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("outstanding");
+  const [tab, setTab] = useState<ReportTab>("payments");
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Reports</h1>
-          <p className="text-sm text-muted-foreground">Outstanding balances and payment analytics</p>
+          <p className="text-sm text-muted-foreground">Payment analytics</p>
         </div>
       </div>
 
-      <div className="flex gap-1 border-b">
-        <button
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === "outstanding"
-              ? "border-primary text-foreground"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-          onClick={() => setActiveTab("outstanding")}
-        >
-          <div className="flex items-center gap-2">
-            <FileText className="h-4 w-4" />
-            Outstanding Report
-          </div>
-        </button>
-        <button
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === "payments"
-              ? "border-primary text-foreground"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-          onClick={() => setActiveTab("payments")}
-        >
-          <div className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Payment Report
-          </div>
-        </button>
+      <div className="inline-flex items-center gap-1 rounded-lg bg-muted p-1">
+        {REPORT_TABS.map((t) => (
+          <button
+            key={t.value}
+            onClick={() => setTab(t.value)}
+            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+              tab === t.value
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
-      {activeTab === "outstanding" && <OutstandingSection />}
-      {activeTab === "payments" && <PaymentReportSection />}
+      {tab === "payments" ? <PaymentReportSection /> : <DetailsReportSection />}
     </div>
-  );
-}
-
-function OutstandingSection() {
-  const [projects, setProjects] = useState<OutstandingProject[]>([]);
-  const [meta, setMeta] = useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(true);
-  const [projectType, setProjectType] = useState("");
-  const [projectTypeSearch, setProjectTypeSearch] = useState("");
-  const [projectTypeDropdownOpen, setProjectTypeDropdownOpen] = useState(false);
-  const [minDue, setMinDue] = useState("");
-  const [maxDue, setMaxDue] = useState("");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-
-  const fetchOutstanding = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params: Record<string, string | number> = { page, limit: 10 };
-      if (projectType) params.projectType = projectType;
-      if (minDue) params.minDue = minDue;
-      if (maxDue) params.maxDue = maxDue;
-      if (dateFrom) params.dateFrom = dateFrom;
-      if (dateTo) params.dateTo = dateTo;
-      const response = await api.get<PaginatedResponse<OutstandingProject>>("/reports/outstanding", { params });
-      setProjects(response.data.data);
-      setMeta(response.data.meta);
-    } catch (error) {
-      console.error("Failed to fetch outstanding report:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, projectType, minDue, maxDue, dateFrom, dateTo]);
-
-  useEffect(() => { fetchOutstanding(); }, [fetchOutstanding]);
-
-  const hasFilters = projectType || minDue || maxDue || dateFrom || dateTo;
-
-  return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="flex items-end gap-3 mb-6 flex-wrap">
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Type</label>
-            <div className="relative">
-              <Input
-                value={projectType || projectTypeSearch}
-                onChange={(e) => { setProjectTypeSearch(e.target.value); setProjectTypeDropdownOpen(true); if (projectType) { setProjectType(""); setPage(1); } }}
-                onFocus={() => setProjectTypeDropdownOpen(true)}
-                onBlur={() => setTimeout(() => setProjectTypeDropdownOpen(false), 200)}
-                placeholder="All Types"
-                className="w-44"
-              />
-              {projectTypeDropdownOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto">
-                  {!projectTypeSearch && (
-                    <div className="px-3 py-2 cursor-pointer hover:bg-accent text-muted-foreground"
-                      onMouseDown={() => { setProjectType(""); setProjectTypeSearch(""); setProjectTypeDropdownOpen(false); setPage(1); }}>
-                      All Types
-                    </div>
-                  )}
-                  {PROJECT_TYPES.filter((type) => type.toLowerCase().includes(projectTypeSearch.toLowerCase())).map((type) => (
-                    <div key={type} className={`px-3 py-2 cursor-pointer hover:bg-accent ${projectType === type ? "bg-accent" : ""}`}
-                      onMouseDown={() => { setProjectType(type); setProjectTypeSearch(""); setProjectTypeDropdownOpen(false); setPage(1); }}>
-                      {type}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Min Due</label>
-            <Input type="number" placeholder="0" value={minDue} onChange={(e) => { setMinDue(e.target.value); setPage(1); }} className="w-28" />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Max Due</label>
-            <Input type="number" placeholder="No limit" value={maxDue} onChange={(e) => { setMaxDue(e.target.value); setPage(1); }} className="w-28" />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Date From</label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} className="pl-9" />
-            </div>
-          </div>
-          {hasFilters && (
-            <Button variant="ghost" size="sm" onClick={() => { setProjectType(""); setMinDue(""); setMaxDue(""); setDateFrom(""); setDateTo(""); setProjectTypeSearch(""); }}
-              className="text-muted-foreground h-9">
-              Clear
-            </Button>
-          )}
-        </div>
-
-        {loading ? (
-          <div className="p-4">
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="font-semibold">Project</TableHead>
-                  <TableHead className="font-semibold">Company</TableHead>
-                  <TableHead className="font-semibold">Type</TableHead>
-                  <TableHead className="font-semibold text-right">Total</TableHead>
-                  <TableHead className="font-semibold text-right">Paid</TableHead>
-                  <TableHead className="font-semibold text-right">Due</TableHead>
-                  <TableHead className="font-semibold">Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <TableRow key={i}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Skeleton className="h-9 w-9 rounded-lg shrink-0" />
-                        <Skeleton className="h-4 w-32" />
-                      </div>
-                    </TableCell>
-                    <TableCell><Skeleton className="h-4 w-28" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-24 rounded-full" /></TableCell>
-                    <TableCell className="text-right"><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
-                    <TableCell className="text-right"><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
-                    <TableCell className="text-right"><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        ) : projects.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-            <AlertTriangle className="h-12 w-12 mb-4 opacity-40" />
-            <p className="text-lg font-medium">No outstanding projects</p>
-            <p className="text-sm mt-1">All projects are fully paid</p>
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="font-semibold">Project</TableHead>
-                <TableHead className="font-semibold">Company</TableHead>
-                <TableHead className="font-semibold">Type</TableHead>
-                <TableHead className="font-semibold text-right">Total</TableHead>
-                <TableHead className="font-semibold text-right">Paid</TableHead>
-                <TableHead className="font-semibold text-right">Due</TableHead>
-                <TableHead className="font-semibold">Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {projects.map((project) => (
-                <TableRow key={project.id} className="group">
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 shrink-0">
-                        <FileText className="h-4 w-4 text-primary" />
-                      </div>
-                      <span className="font-medium">{project.projectName}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell><span className="text-sm text-muted-foreground">{project.companyName}</span></TableCell>
-                  <TableCell><span className="text-sm">{project.projectType}</span></TableCell>
-                  <TableCell className="text-right font-medium">{formatCurrency(project.totalValue)}</TableCell>
-                  <TableCell className="text-right text-emerald-600 dark:text-emerald-400">{formatCurrency(project.totalPaid)}</TableCell>
-                  <TableCell className="text-right font-semibold text-red-600 dark:text-red-400">{formatCurrency(project.due)}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary" className={`${STATUS_COLORS[project.paymentStatus] || ""} font-normal`}>
-                      {STATUS_LABELS[project.paymentStatus] || project.paymentStatus}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-
-        {meta.totalPages > 1 && (
-          <div className="flex items-center justify-between mt-4 pt-4 border-t">
-            <p className="text-sm text-muted-foreground">Page {meta.page} of {meta.totalPages}</p>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>Previous</Button>
-              <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))} disabled={page === meta.totalPages}>Next</Button>
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
   );
 }
 
@@ -311,6 +98,21 @@ function PaymentReportSection() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | "ALL">("ALL");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [filterCompanyId, setFilterCompanyId] = useState("");
+  const [companyFilterSearch, setCompanyFilterSearch] = useState("");
+  const [companyFilterDropdownOpen, setCompanyFilterDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const response = await api.get<PaginatedResponse<Company>>("/companies", { params: { limit: 100 } });
+        setCompanies(response.data.data);
+      } catch (error) {
+        console.error("Failed to fetch companies:", error);
+      }
+    })();
+  }, []);
 
   const fetchPayments = useCallback(async () => {
     setLoading(true);
@@ -319,6 +121,7 @@ function PaymentReportSection() {
       if (paymentMethod !== "ALL") params.paymentMethod = paymentMethod;
       if (dateFrom) params.dateFrom = dateFrom;
       if (dateTo) params.dateTo = dateTo;
+      if (filterCompanyId) params.companyId = filterCompanyId;
       const response = await api.get<PaginatedResponse<Payment>>("/reports/payments", { params });
       setPayments(response.data.data);
       setMeta(response.data.meta);
@@ -327,11 +130,11 @@ function PaymentReportSection() {
     } finally {
       setLoading(false);
     }
-  }, [page, paymentMethod, dateFrom, dateTo]);
+  }, [page, paymentMethod, dateFrom, dateTo, filterCompanyId]);
 
   useEffect(() => { fetchPayments(); }, [fetchPayments]);
 
-  const hasFilters = paymentMethod !== "ALL" || dateFrom || dateTo;
+  const hasFilters = paymentMethod !== "ALL" || dateFrom || dateTo || filterCompanyId;
 
   return (
     <Card>
@@ -360,8 +163,48 @@ function PaymentReportSection() {
               </SelectContent>
             </Select>
           </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Company</label>
+            <div className="relative">
+              <Input
+                value={companies.find((c) => c.id === filterCompanyId)?.companyName || companyFilterSearch}
+                onChange={(e) => {
+                  setCompanyFilterSearch(e.target.value);
+                  setCompanyFilterDropdownOpen(true);
+                  if (filterCompanyId) { setFilterCompanyId(""); setPage(1); }
+                }}
+                onFocus={() => setCompanyFilterDropdownOpen(true)}
+                onBlur={() => setTimeout(() => setCompanyFilterDropdownOpen(false), 200)}
+                placeholder="All Companies"
+                className="w-48"
+              />
+              {companyFilterDropdownOpen && (
+                <div className="absolute z-50 w-48 mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto">
+                  {!companyFilterSearch && !filterCompanyId && (
+                    <div
+                      className="px-3 py-2 cursor-pointer hover:bg-accent text-muted-foreground text-sm"
+                      onMouseDown={() => { setFilterCompanyId(""); setCompanyFilterSearch(""); setCompanyFilterDropdownOpen(false); setPage(1); }}
+                    >
+                      All Companies
+                    </div>
+                  )}
+                  {companies
+                    .filter((c) => c.companyName.toLowerCase().includes(companyFilterSearch.toLowerCase()))
+                    .map((c) => (
+                      <div
+                        key={c.id}
+                        className={`px-3 py-2 cursor-pointer hover:bg-accent text-sm ${filterCompanyId === c.id ? "bg-accent font-medium" : ""}`}
+                        onMouseDown={() => { setFilterCompanyId(c.id); setCompanyFilterSearch(""); setCompanyFilterDropdownOpen(false); setPage(1); }}
+                      >
+                        {c.companyName}
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          </div>
           {hasFilters && (
-            <Button variant="ghost" size="sm" onClick={() => { setPaymentMethod("ALL"); setDateFrom(""); setDateTo(""); }}
+            <Button variant="ghost" size="sm" onClick={() => { setPaymentMethod("ALL"); setDateFrom(""); setDateTo(""); setFilterCompanyId(""); setCompanyFilterSearch(""); }}
               className="text-muted-foreground h-9">
               Clear
             </Button>
@@ -457,5 +300,247 @@ function PaymentReportSection() {
         )}
       </CardContent>
     </Card>
+  );
+}
+
+interface DetailsRow extends Project {
+  financial?: ProjectFinancial;
+}
+
+function DetailsReportSection() {
+  const [rows, setRows] = useState<DetailsRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [filterCompanyId, setFilterCompanyId] = useState("");
+  const [companyFilterSearch, setCompanyFilterSearch] = useState("");
+  const [companyFilterDropdownOpen, setCompanyFilterDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const response = await api.get<PaginatedResponse<Company>>("/companies", { params: { limit: 100 } });
+        setCompanies(response.data.data);
+      } catch (error) {
+        console.error("Failed to fetch companies:", error);
+      }
+    })();
+  }, []);
+
+  const fetchDetails = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params: Record<string, string | number> = { page: 1, limit: 100 };
+      if (filterCompanyId) params.companyId = filterCompanyId;
+
+      const first = await api.get<PaginatedResponse<DetailsRow>>("/projects", { params });
+      let all = first.data.data;
+      const { totalPages } = first.data.meta;
+
+      if (totalPages > 1) {
+        const rest = await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, i) =>
+            api.get<PaginatedResponse<DetailsRow>>("/projects", { params: { ...params, page: i + 2 } })
+          )
+        );
+        all = all.concat(...rest.map((r) => r.data.data));
+      }
+
+      setRows(all);
+    } catch (error) {
+      console.error("Failed to fetch details report:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [filterCompanyId]);
+
+  useEffect(() => { fetchDetails(); }, [fetchDetails]);
+
+  const totals = rows.reduce(
+    (acc, row) => {
+      acc.value += parseFloat(row.totalValue) || 0;
+      acc.paid += parseFloat(row.financial?.totalPaid ?? "0") || 0;
+      acc.due += parseFloat(row.financial?.due ?? "0") || 0;
+      return acc;
+    },
+    { value: 0, paid: 0, due: 0 }
+  );
+
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+        <Card>
+          <CardContent className="pt-5 pb-5 px-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 shrink-0">
+                <DollarSign className="h-5 w-5 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground">Total Value</p>
+                <p className="text-2xl font-bold truncate" title={formatCurrency(totals.value)}>
+                  {formatCurrencyCompact(totals.value)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-5 pb-5 px-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0">
+                <Wallet className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground">Total Paid</p>
+                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 truncate" title={formatCurrency(totals.paid)}>
+                  {formatCurrencyCompact(totals.paid)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-5 pb-5 px-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-500/10 shrink-0">
+                <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground">Total Due</p>
+                <p className="text-2xl font-bold text-red-600 dark:text-red-400 truncate" title={formatCurrency(totals.due)}>
+                  {formatCurrencyCompact(totals.due)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex items-end gap-3 mb-6 flex-wrap">
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">Company</label>
+              <div className="relative">
+                <Input
+                  value={companies.find((c) => c.id === filterCompanyId)?.companyName || companyFilterSearch}
+                  onChange={(e) => {
+                    setCompanyFilterSearch(e.target.value);
+                    setCompanyFilterDropdownOpen(true);
+                    if (filterCompanyId) setFilterCompanyId("");
+                  }}
+                  onFocus={() => setCompanyFilterDropdownOpen(true)}
+                  onBlur={() => setTimeout(() => setCompanyFilterDropdownOpen(false), 200)}
+                  placeholder="All Companies"
+                  className="w-56"
+                />
+                {companyFilterDropdownOpen && (
+                  <div className="absolute z-50 w-56 mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto">
+                    {!companyFilterSearch && !filterCompanyId && (
+                      <div
+                        className="px-3 py-2 cursor-pointer hover:bg-accent text-muted-foreground text-sm"
+                        onMouseDown={() => { setFilterCompanyId(""); setCompanyFilterSearch(""); setCompanyFilterDropdownOpen(false); }}
+                      >
+                        All Companies
+                      </div>
+                    )}
+                    {companies
+                      .filter((c) => c.companyName.toLowerCase().includes(companyFilterSearch.toLowerCase()))
+                      .map((c) => (
+                        <div
+                          key={c.id}
+                          className={`px-3 py-2 cursor-pointer hover:bg-accent text-sm ${filterCompanyId === c.id ? "bg-accent font-medium" : ""}`}
+                          onMouseDown={() => { setFilterCompanyId(c.id); setCompanyFilterSearch(""); setCompanyFilterDropdownOpen(false); }}
+                        >
+                          {c.companyName}
+                        </div>
+                      ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            {filterCompanyId && (
+              <Button variant="ghost" size="sm" onClick={() => { setFilterCompanyId(""); setCompanyFilterSearch(""); }}
+                className="text-muted-foreground h-9">
+                Clear
+              </Button>
+            )}
+          </div>
+
+          {loading ? (
+            <div className="p-4">
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead className="font-semibold">Project</TableHead>
+                    <TableHead className="font-semibold">Company</TableHead>
+                    <TableHead className="font-semibold">Type</TableHead>
+                    <TableHead className="font-semibold text-right">Value</TableHead>
+                    <TableHead className="font-semibold text-right">Paid</TableHead>
+                    <TableHead className="font-semibold text-right">Due</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <TableRow key={i}>
+                      <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                      <TableCell><Skeleton className="h-5 w-24 rounded-full" /></TableCell>
+                      <TableCell className="text-right"><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
+                      <TableCell className="text-right"><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
+                      <TableCell className="text-right"><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : rows.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <FileText className="h-12 w-12 mb-4 opacity-40" />
+              <p className="text-lg font-medium">No projects found</p>
+              <p className="text-sm mt-1">No projects match your filters</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="font-semibold">Project</TableHead>
+                  <TableHead className="font-semibold">Company</TableHead>
+                  <TableHead className="font-semibold">Type</TableHead>
+                  <TableHead className="font-semibold text-right">Value</TableHead>
+                  <TableHead className="font-semibold text-right">Paid</TableHead>
+                  <TableHead className="font-semibold text-right">Due</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((row) => (
+                  <TableRow key={row.id}>
+                    <TableCell><span className="text-sm font-medium">{row.projectName}</span></TableCell>
+                    <TableCell><span className="text-sm text-muted-foreground">{row.company?.companyName ?? "-"}</span></TableCell>
+                    <TableCell>
+                      {row.projectType ? (
+                        <Badge variant="secondary" className="font-normal">{row.projectType}</Badge>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right font-medium">{formatCurrency(row.totalValue)}</TableCell>
+                    <TableCell className="text-right text-emerald-600 dark:text-emerald-400">{formatCurrency(row.financial?.totalPaid ?? 0)}</TableCell>
+                    <TableCell className="text-right text-red-600 dark:text-red-400">{formatCurrency(row.financial?.due ?? 0)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+              <tfoot>
+                <TableRow className="hover:bg-transparent border-t-2 font-semibold">
+                  <TableCell colSpan={3}>Total</TableCell>
+                  <TableCell className="text-right">{formatCurrency(totals.value)}</TableCell>
+                  <TableCell className="text-right text-emerald-600 dark:text-emerald-400">{formatCurrency(totals.paid)}</TableCell>
+                  <TableCell className="text-right text-red-600 dark:text-red-400">{formatCurrency(totals.due)}</TableCell>
+                </TableRow>
+              </tfoot>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

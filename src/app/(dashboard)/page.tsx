@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import api from "@/lib/api";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatCurrencyCompact } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -195,7 +195,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </Link>
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="hover:shadow-md transition-shadow col-span-2 lg:col-span-1">
           <CardContent className="pt-5 pb-5 px-4">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0">
@@ -203,12 +203,14 @@ export default function DashboardPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs text-muted-foreground">Total Value</p>
-                <p className="text-base lg:text-lg font-bold break-words">{formatCurrency(report.totalProjectValue)}</p>
+                <p className="text-2xl font-bold truncate" title={formatCurrency(report.totalProjectValue)}>
+                  {formatCurrencyCompact(report.totalProjectValue)}
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="hover:shadow-md transition-shadow col-span-2 lg:col-span-1">
           <CardContent className="pt-5 pb-5 px-4">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-500/10 shrink-0">
@@ -216,7 +218,9 @@ export default function DashboardPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs text-muted-foreground">Total Due</p>
-                <p className="text-base lg:text-lg font-bold text-red-600 dark:text-red-400 break-words">{formatCurrency(report.totalDue)}</p>
+                <p className="text-2xl font-bold text-red-600 dark:text-red-400 truncate" title={formatCurrency(report.totalDue)}>
+                  {formatCurrencyCompact(report.totalDue)}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -225,7 +229,7 @@ export default function DashboardPage() {
 
       {/* Secondary Stats */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="hover:shadow-md transition-shadow col-span-2 lg:col-span-1">
           <CardContent className="pt-5 pb-5 px-4">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/10 shrink-0">
@@ -233,12 +237,14 @@ export default function DashboardPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs text-muted-foreground">Total Paid</p>
-                <p className="text-base lg:text-lg font-bold text-emerald-600 dark:text-emerald-400 break-words">{formatCurrency(report.totalPaid)}</p>
+                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 truncate" title={formatCurrency(report.totalPaid)}>
+                  {formatCurrencyCompact(report.totalPaid)}
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Link href="/projects?status=IN_PROGRESS">
+        <Link href="/projects">
           <Card className="hover:shadow-md transition-shadow cursor-pointer group">
             <CardContent className="pt-5 pb-5 px-4">
               <div className="flex items-center gap-3">
@@ -254,7 +260,7 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </Link>
-        <Link href="/projects?status=COMPLETED">
+        <Link href="/projects">
           <Card className="hover:shadow-md transition-shadow cursor-pointer group">
             <CardContent className="pt-5 pb-5 px-4">
               <div className="flex items-center gap-3">

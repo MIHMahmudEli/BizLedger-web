@@ -18,7 +18,6 @@ import {
   Loader2,
 } from "lucide-react";
 import api from "@/lib/api";
-import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -53,6 +52,9 @@ import type { Company, PaginatedResponse } from "@/types";
 interface CompanyForm {
   companyName: string;
   category: string;
+  contactName: string;
+  designation: string;
+  phone: string;
   address: string;
   addressArea: string;
   website: string;
@@ -95,10 +97,19 @@ const CATEGORY_COLORS: Record<string, string> = {
 const emptyForm: CompanyForm = {
   companyName: "",
   category: "",
+  contactName: "",
+  designation: "",
+  phone: "",
   address: "",
   addressArea: "",
   website: "",
 };
+
+const DESIGNATIONS = [
+  "Owner", "Manager", "Director", "CEO", "CTO", "CFO",
+  "Accountant", "HR Manager", "Sales Manager", "Marketing Manager",
+  "Project Manager", "Developer", "Designer", "Consultant", "Assistant", "Other",
+];
 
 export default function CompaniesPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -111,6 +122,9 @@ export default function CompaniesPage() {
   const [filterCategory, setFilterCategory] = useState("");
   const [categorySearch, setCategorySearch] = useState("");
   const [categoryDropdownOpen, setCategoryDropdownOpen] = useState(false);
+
+  const [designationSearch, setDesignationSearch] = useState("");
+  const [designationDropdownOpen, setDesignationDropdownOpen] = useState(false);
 
   const [filterArea, setFilterArea] = useState("");
   const [areaSearch, setAreaSearch] = useState("");
@@ -159,6 +173,7 @@ export default function CompaniesPage() {
     setEditingCompany(null);
     setForm(emptyForm);
     setCategorySearch("");
+    setDesignationSearch("");
     setFormOpen(true);
   };
 
@@ -167,11 +182,15 @@ export default function CompaniesPage() {
     setForm({
       companyName: company.companyName,
       category: company.category ?? "",
+      contactName: company.contactName ?? "",
+      designation: company.designation ?? "",
+      phone: company.phone ?? "",
       address: company.address ?? "",
       addressArea: company.addressArea ?? "",
       website: company.website ?? "",
     });
     setCategorySearch("");
+    setDesignationSearch("");
     setFormOpen(true);
   };
 
@@ -182,6 +201,9 @@ export default function CompaniesPage() {
       const body = {
         companyName: form.companyName.trim(),
         category: form.category.trim() || undefined,
+        contactName: form.contactName.trim() || undefined,
+        designation: form.designation.trim() || undefined,
+        phone: form.phone.trim() || undefined,
         address: form.address.trim() || undefined,
         addressArea: form.addressArea.trim() || undefined,
         website: form.website.trim() || undefined,
@@ -360,14 +382,16 @@ export default function CompaniesPage() {
         <CardContent className="p-0">
           {loading ? (
             <div className="p-4">
-              <Table>
+              <Table className="min-w-[1100px]">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="font-semibold">Company</TableHead>
                     <TableHead className="font-semibold">Category</TableHead>
-                    <TableHead className="font-semibold">Area</TableHead>
+                    <TableHead className="font-semibold">Contact</TableHead>
+                    <TableHead className="font-semibold">Designation</TableHead>
+                    <TableHead className="font-semibold">Phone</TableHead>
+                    <TableHead className="font-semibold">Address</TableHead>
                     <TableHead className="font-semibold">Website</TableHead>
-                    <TableHead className="font-semibold">Created</TableHead>
                     <TableHead className="w-[100px] font-semibold text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -384,9 +408,11 @@ export default function CompaniesPage() {
                         </div>
                       </TableCell>
                       <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-16" /></TableCell>
-                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                       <TableCell className="text-right"><Skeleton className="h-8 w-16 ml-auto" /></TableCell>
                     </TableRow>
                   ))}
@@ -408,14 +434,16 @@ export default function CompaniesPage() {
               )}
             </div>
           ) : (
-            <Table>
+            <Table className="min-w-[1100px]">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="font-semibold">Company</TableHead>
                   <TableHead className="font-semibold">Category</TableHead>
-                  <TableHead className="font-semibold">Area</TableHead>
+                  <TableHead className="font-semibold">Contact</TableHead>
+                  <TableHead className="font-semibold">Designation</TableHead>
+                  <TableHead className="font-semibold">Phone</TableHead>
+                  <TableHead className="font-semibold">Address</TableHead>
                   <TableHead className="font-semibold">Website</TableHead>
-                  <TableHead className="font-semibold">Created</TableHead>
                   <TableHead className="w-[100px] font-semibold text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -453,7 +481,16 @@ export default function CompaniesPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <span className="text-muted-foreground">{company.addressArea ?? "-"}</span>
+                      <span className="text-sm">{company.primaryContact?.name ?? company.contactName ?? "-"}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-muted-foreground">{company.primaryContact?.designation ?? company.designation ?? "-"}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm">{company.primaryContact?.mobile ?? company.phone ?? "-"}</span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-muted-foreground">{company.address ?? "-"}</span>
                     </TableCell>
                     <TableCell>
                       {company.website ? (
@@ -471,10 +508,7 @@ export default function CompaniesPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-muted-foreground">{formatDate(company.createdAt)}</span>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-end gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-1">
                         <Button
                           variant="ghost"
                           size="icon"
@@ -573,7 +607,7 @@ export default function CompaniesPage() {
 
       {/* Create / Edit Dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>
               {editingCompany ? "Edit Company" : "Add Company"}
@@ -584,8 +618,8 @@ export default function CompaniesPage() {
                 : "Fill in the details to create a new company."}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-2">
-            <div className="space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-5 py-2">
+            <div className="space-y-2 col-span-1 sm:col-span-2">
               <Label htmlFor="companyName">Company Name *</Label>
               <Input
                 id="companyName"
@@ -633,6 +667,75 @@ export default function CompaniesPage() {
               </div>
             </div>
             <div className="space-y-2">
+              <Label htmlFor="website">Website</Label>
+              <Input
+                id="website"
+                value={form.website}
+                onChange={(e) => setForm({ ...form, website: e.target.value })}
+                placeholder="https://example.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="contactName">Contact</Label>
+              <Input
+                id="contactName"
+                value={form.contactName}
+                onChange={(e) => setForm({ ...form, contactName: e.target.value })}
+                placeholder="Contact person name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="designation">Designation</Label>
+              <div className="relative">
+                <Input
+                  id="designation"
+                  value={form.designation || designationSearch}
+                  onChange={(e) => {
+                    setDesignationSearch(e.target.value);
+                    setDesignationDropdownOpen(true);
+                    if (form.designation) setForm({ ...form, designation: "" });
+                  }}
+                  onFocus={() => setDesignationDropdownOpen(true)}
+                  onBlur={() => setTimeout(() => {
+                    // Only a suggestion may be picked — discard free text
+                    if (designationSearch) {
+                      const match = DESIGNATIONS.find(
+                        (d) => d.toLowerCase() === designationSearch.trim().toLowerCase()
+                      );
+                      if (match) setForm((f) => ({ ...f, designation: match }));
+                      setDesignationSearch("");
+                    }
+                    setDesignationDropdownOpen(false);
+                  }, 200)}
+                  placeholder="Select a designation"
+                />
+                {designationDropdownOpen && (
+                  <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto">
+                    {DESIGNATIONS.filter((d) =>
+                      d.toLowerCase().includes(designationSearch.toLowerCase())
+                    ).map((d) => (
+                      <div
+                        key={d}
+                        className={`px-3 py-2 cursor-pointer hover:bg-accent text-sm ${form.designation === d ? "bg-accent font-medium" : ""}`}
+                        onMouseDown={() => { setForm({ ...form, designation: d }); setDesignationSearch(""); setDesignationDropdownOpen(false); }}
+                      >
+                        {d}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                placeholder="+8801XXXXXXXXX"
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="addressArea">Area</Label>
               <Input
                 id="addressArea"
@@ -641,22 +744,13 @@ export default function CompaniesPage() {
                 placeholder="Gulshan, Banani, etc."
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 col-span-1 sm:col-span-2">
               <Label htmlFor="address">Address</Label>
               <Input
                 id="address"
                 value={form.address}
                 onChange={(e) => setForm({ ...form, address: e.target.value })}
                 placeholder="Full address"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="website">Website</Label>
-              <Input
-                id="website"
-                value={form.website}
-                onChange={(e) => setForm({ ...form, website: e.target.value })}
-                placeholder="https://example.com"
               />
             </div>
           </div>

@@ -32,6 +32,7 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
+import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import { formatDate } from "@/lib/utils";
 
@@ -77,6 +78,11 @@ interface PaginatedResponse {
 }
 
 export default function ContactsPage() {
+  // Hidden for now for all user types — remove this guard to re-enable
+  const router = useRouter();
+  useEffect(() => {
+    router.replace("/");
+  }, [router]);
   const [contacts, setContacts] = useState<ContactWithCompany[]>([]);
   const [meta, setMeta] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
   const [search, setSearch] = useState("");

@@ -23,7 +23,7 @@ import {
   XCircle,
 } from "lucide-react";
 import api from "@/lib/api";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatCurrencyCompact, formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -255,7 +255,7 @@ export default function CompanyDetailPage() {
   const handleSaveProject = async () => {
     if (!projectForm.projectName.trim()) return; setProjectSaving(true);
     try {
-      const body = { projectName: projectForm.projectName.trim(), projectType: projectForm.projectType.trim() || undefined, totalValue: projectForm.totalValue || undefined, status: projectForm.status, startDate: projectForm.startDate || undefined, deadline: projectForm.deadline || undefined, description: projectForm.description.trim() || undefined };
+      const body = { projectName: projectForm.projectName.trim(), projectType: projectForm.projectType.trim() || undefined, totalValue: parseFloat(projectForm.totalValue) || 0, status: projectForm.status, startDate: projectForm.startDate || undefined, deadline: projectForm.deadline || undefined, description: projectForm.description.trim() || undefined };
       if (editingProject) { await api.patch(`/projects/${editingProject.id}`, body); } else { await api.post(`/companies/${companyId}/projects`, body); }
       setProjectDialogOpen(false); fetchCompany();
     } catch {} finally { setProjectSaving(false); }
@@ -333,7 +333,7 @@ export default function CompanyDetailPage() {
 
       {/* Stats Row */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-3">
-        <Card>
+        <Card className="col-span-1">
           <CardContent className="pt-5 pb-5 px-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 shrink-0">
@@ -341,12 +341,12 @@ export default function CompanyDetailPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs text-muted-foreground">Contacts</p>
-                <p className="text-sm lg:text-base font-bold">{company.contacts?.length ?? 0}</p>
+                <p className="text-lg font-bold">{company.contacts?.length ?? 0}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="col-span-1">
           <CardContent className="pt-5 pb-5 px-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 shrink-0">
@@ -354,12 +354,12 @@ export default function CompanyDetailPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs text-muted-foreground">Projects</p>
-                <p className="text-sm lg:text-base font-bold">{company.projects?.length ?? 0}</p>
+                <p className="text-lg font-bold">{company.projects?.length ?? 0}</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="col-span-2 lg:col-span-1">
           <CardContent className="pt-5 pb-5 px-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 shrink-0">
@@ -367,8 +367,8 @@ export default function CompanyDetailPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-xs text-muted-foreground">Total Value</p>
-                <p className="text-sm lg:text-base font-bold break-words">
-                  {formatCurrency(company.projects?.reduce((sum, p) => sum + parseFloat(p.totalValue || "0"), 0) ?? 0)}
+                <p className="text-lg font-bold truncate" title={formatCurrency(company.projects?.reduce((sum, p) => sum + parseFloat(p.totalValue || "0"), 0) ?? 0)}>
+                  {formatCurrencyCompact(company.projects?.reduce((sum, p) => sum + parseFloat(p.totalValue || "0"), 0) ?? 0)}
                 </p>
               </div>
             </div>
@@ -479,7 +479,7 @@ export default function CompanyDetailPage() {
                                 ) : <span className="text-muted-foreground">-</span>}
                               </TableCell>
                               <TableCell>
-                                <div className="flex items-center justify-end gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                <div className="flex items-center justify-end gap-1">
                                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditContact(contact)}>
                                     <Edit className="h-4 w-4" />
                                   </Button>
@@ -544,7 +544,7 @@ export default function CompanyDetailPage() {
                               </TableCell>
                               <TableCell><span className="text-sm text-muted-foreground">{project.deadline ? formatDate(project.deadline) : "-"}</span></TableCell>
                               <TableCell>
-                                <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="flex items-center justify-end gap-1">
                                   <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditProject(project)}>
                                     <Edit className="h-4 w-4" />
                                   </Button>

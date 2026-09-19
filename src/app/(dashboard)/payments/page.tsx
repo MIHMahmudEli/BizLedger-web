@@ -22,6 +22,7 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
+import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import type { Payment, PaginatedResponse, PaymentMethod } from "@/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
@@ -55,6 +56,11 @@ const METHOD_LABELS: Record<PaymentMethod, string> = {
 };
 
 export default function PaymentsPage() {
+  // Hidden for now for all user types — remove this guard to re-enable
+  const router = useRouter();
+  useEffect(() => {
+    router.replace("/");
+  }, [router]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [meta, setMeta] = useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
   const [page, setPage] = useState(1);

@@ -13,6 +13,7 @@ import {
   ChevronRight,
   X,
   ExternalLink,
+  MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -144,9 +145,13 @@ function ProjectsContent() {
   const [limit, setLimit] = useState(20);
   const [loading, setLoading] = useState(true);
 
-  const [filterType, setFilterType] = useState(searchParams.get("type") || "");
-  const [filterStatus, setFilterStatus] = useState(searchParams.get("status") || "");
+  const [filterArea, setFilterArea] = useState(searchParams.get("area") || "");
+  const [filterCompanyId, setFilterCompanyId] = useState(searchParams.get("companyId") || "");
   const [filterPaymentStatus, setFilterPaymentStatus] = useState(searchParams.get("paymentStatus") || "");
+  const [areaSearch, setAreaSearch] = useState("");
+  const [areaDropdownOpen, setAreaDropdownOpen] = useState(false);
+  const [companyFilterSearch, setCompanyFilterSearch] = useState("");
+  const [companyFilterDropdownOpen, setCompanyFilterDropdownOpen] = useState(false);
 
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -170,14 +175,18 @@ function ProjectsContent() {
 
   useEffect(() => {
     fetchProjects();
-  }, [page, debouncedSearch, limit, filterType, filterStatus, filterPaymentStatus]);
+  }, [page, debouncedSearch, limit, filterArea, filterCompanyId, filterPaymentStatus]);
+
+  useEffect(() => {
+    fetchCompanies();
+  }, []);
 
   const fetchProjects = async () => {
     setLoading(true);
     try {
       const params: Record<string, string | number> = { page, limit, search: debouncedSearch };
-      if (filterType) params.projectType = filterType;
-      if (filterStatus) params.status = filterStatus;
+      if (filterArea) params.area = filterArea;
+      if (filterCompanyId) params.companyId = filterCompanyId;
       const response = await api.get<PaginatedResponse<ProjectRow>>("/projects", { params });
       let filtered = response.data.data;
       if (filterPaymentStatus) {
@@ -243,22 +252,24 @@ function ProjectsContent() {
 
   const selectedCompany = companies.find((c) => c.id === form.companyId);
 
+  const uniqueAreas = [...new Set(companies.map((c) => c.addressArea).filter(Boolean))] as string[];
+
   const handleSubmit = async () => {
     if (!editingId && !form.companyId) return;
     setSubmitting(true);
     try {
+      const { companyId, ...rest } = form;
       const payload = {
-        ...form,
+        ...rest,
         totalValue: parseFloat(form.totalValue) || 0,
         startDate: form.startDate || undefined,
         deadline: form.deadline || undefined,
         description: form.description || undefined,
       };
       if (editingId) {
-        const { companyId, ...updatePayload } = payload;
-        await api.patch(`/projects/${editingId}`, updatePayload);
+        await api.patch(`/projects/${editingId}`, payload);
       } else {
-        await api.post(`/companies/${form.companyId}/projects`, payload);
+        await api.post(`/companies/${companyId}/projects`, payload);
       }
       setFormOpen(false);
       setEditingId(null);
@@ -315,20 +326,69 @@ function ProjectsContent() {
               </button>
             )}
           </div>
-          <Select value={filterType || "all"} onValueChange={(value) => { setFilterType(value === "all" ? "" : value); setPage(1); }}>
-            <SelectTrigger className="w-44"><SelectValue placeholder="All Types" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              {PROJECT_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={filterStatus || "all"} onValueChange={(value) => { setFilterStatus(value === "all" ? "" : value); setPage(1); }}>
-            <SelectTrigger className="w-40"><SelectValue placeholder="All Statuses" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              {Object.entries(PROJECT_STATUS_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <div className="relative">
+            <Input
+              value={filterArea || areaSearch}
+              onChange={(e) => { setAreaSearch(e.target.value); setAreaDropdownOpen(true); if (filterArea) { setFilterArea(""); setPage(1); } }}
+              onFocus={() => setAreaDropdownOpen(true)}
+              onBlur={() => setTimeout(() => setAreaDropdownOpen(false), 200)}
+              placeholder="Area..."
+              className="w-40"
+            />
+            {areaDropdownOpen && uniqueAreas.length > 0 && (
+              <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto">
+                {!areaSearch && !filterArea && (
+                  <div className="px-3 py-2 cursor-pointer hover:bg-accent text-muted-foreground text-sm"
+                    onMouseDown={() => { setFilterArea(""); setAreaSearch(""); setAreaDropdownOpen(false); setPage(1); }}>
+                    All Areas
+                  </div>
+                )}
+                {uniqueAreas.filter((a) => a.toLowerCase().includes(areaSearch.toLowerCase())).map((a) => (
+                  <div key={a} className={`px-3 py-2 cursor-pointer hover:bg-accent text-sm ${filterArea === a ? "bg-accent font-medium" : ""}`}
+                    onMouseDown={() => { setFilterArea(a); setAreaSearch(""); setAreaDropdownOpen(false); setPage(1); }}>
+                    {a}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="relative">
+            <Input
+              value={companies.find((c) => c.id === filterCompanyId)?.companyName || companyFilterSearch}
+              onChange={(e) => { setCompanyFilterSearch(e.target.value); setCompanyFilterDropdownOpen(true); if (filterCompanyId) { setFilterCompanyId(""); setPage(1); } }}
+              onFocus={() => setCompanyFilterDropdownOpen(true)}
+              onBlur={() => setTimeout(() => {
+                // Only a suggestion may be picked — discard free text
+                if (companyFilterSearch) {
+                  const match = companies.find(
+                    (c) => c.companyName.toLowerCase() === companyFilterSearch.trim().toLowerCase()
+                  );
+                  if (match) { setFilterCompanyId(match.id); setPage(1); }
+                  setCompanyFilterSearch("");
+                }
+                setCompanyFilterDropdownOpen(false);
+              }, 200)}
+              placeholder="All Companies"
+              className="w-44"
+            />
+            {companyFilterDropdownOpen && (
+              <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto">
+                {!companyFilterSearch && !filterCompanyId && (
+                  <div className="px-3 py-2 cursor-pointer hover:bg-accent text-muted-foreground text-sm"
+                    onMouseDown={() => { setFilterCompanyId(""); setCompanyFilterSearch(""); setCompanyFilterDropdownOpen(false); setPage(1); }}>
+                    All Companies
+                  </div>
+                )}
+                {companies.filter((c) => c.companyName.toLowerCase().includes(companyFilterSearch.toLowerCase())).map((c) => (
+                  <div key={c.id} className={`px-3 py-2 cursor-pointer hover:bg-accent text-sm ${filterCompanyId === c.id ? "bg-accent font-medium" : ""}`}
+                    onMouseDown={() => { setFilterCompanyId(c.id); setCompanyFilterSearch(""); setCompanyFilterDropdownOpen(false); setPage(1); }}>
+                    <div className="font-medium">{c.companyName}</div>
+                    {c.category && <div className="text-xs text-muted-foreground">{c.category}</div>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
           <Select value={filterPaymentStatus || "all"} onValueChange={(value) => { setFilterPaymentStatus(value === "all" ? "" : value); setPage(1); }}>
             <SelectTrigger className="w-44"><SelectValue placeholder="All Payments" /></SelectTrigger>
             <SelectContent>
@@ -336,8 +396,8 @@ function ProjectsContent() {
               {Object.entries(PAYMENT_STATUS_LABELS).map(([value, label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}
             </SelectContent>
           </Select>
-          {(filterType || filterStatus || filterPaymentStatus || search) && (
-            <Button variant="ghost" size="sm" onClick={() => { setFilterType(""); setFilterStatus(""); setFilterPaymentStatus(""); setSearch(""); }}
+          {(filterArea || filterCompanyId || filterPaymentStatus || search) && (
+            <Button variant="ghost" size="sm" onClick={() => { setFilterArea(""); setAreaSearch(""); setFilterCompanyId(""); setCompanyFilterSearch(""); setFilterPaymentStatus(""); setSearch(""); }}
               className="text-muted-foreground">
               <X className="h-4 w-4 mr-1" />Clear
             </Button>
@@ -364,10 +424,11 @@ function ProjectsContent() {
         <CardContent className="p-0">
           {loading ? (
             <div className="p-4">
-              <Table>
+              <Table className="min-w-[1200px]">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent">
                     <TableHead className="font-semibold">Project</TableHead>
+                    <TableHead className="font-semibold">Company</TableHead>
                     <TableHead className="font-semibold">Type</TableHead>
                     <TableHead className="font-semibold text-right">Value</TableHead>
                     <TableHead className="font-semibold text-right">Paid</TableHead>
@@ -389,6 +450,7 @@ function ProjectsContent() {
                           </div>
                         </div>
                       </TableCell>
+                      <TableCell><Skeleton className="h-4 w-28" /></TableCell>
                       <TableCell><Skeleton className="h-5 w-24 rounded-full" /></TableCell>
                       <TableCell className="text-right"><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
                       <TableCell className="text-right"><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
@@ -408,10 +470,11 @@ function ProjectsContent() {
               <p className="text-sm mt-1">Create your first project to get started</p>
             </div>
           ) : (
-            <Table>
+            <Table className="min-w-[1200px]">
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="font-semibold">Project</TableHead>
+                  <TableHead className="font-semibold">Company</TableHead>
                   <TableHead className="font-semibold">Type</TableHead>
                   <TableHead className="font-semibold text-right">Value</TableHead>
                   <TableHead className="font-semibold text-right">Paid</TableHead>
@@ -433,13 +496,21 @@ function ProjectsContent() {
                           <p className="font-medium leading-tight group-hover:text-primary transition-colors">
                             {project.projectName}
                           </p>
-                          {project.deadline && (
+                          {project.company?.addressArea ? (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                              <MapPin className="h-3 w-3" />
+                              {project.company.addressArea}
+                            </p>
+                          ) : project.deadline ? (
                             <p className="text-xs text-muted-foreground mt-0.5">
                               Due {formatDate(project.deadline)}
                             </p>
-                          )}
+                          ) : null}
                         </div>
                       </Link>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm">{project.company?.companyName ?? "-"}</span>
                     </TableCell>
                     <TableCell>
                       {project.projectType ? (
@@ -464,7 +535,7 @@ function ProjectsContent() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center justify-end gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center justify-end gap-1">
                         <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
                           <Link href={`/projects/${project.id}`}>
                             <ExternalLink className="h-4 w-4" />
@@ -529,7 +600,7 @@ function ProjectsContent() {
               {editingId ? "Update the project details below." : "Fill in the details to create a new project."}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2">
             {!editingId && (
               <div className="space-y-2">
                 <Label>Company *</Label>
@@ -611,7 +682,7 @@ function ProjectsContent() {
               <Label htmlFor="deadline">Deadline</Label>
               <Input id="deadline" type="date" value={form.deadline} onChange={(e) => handleFormChange("deadline", e.target.value)} />
             </div>
-            <div className="col-span-2 space-y-2">
+            <div className="sm:col-span-2 space-y-2">
               <Label htmlFor="description">Description</Label>
               <textarea id="description" value={form.description} onChange={(e) => handleFormChange("description", e.target.value)}
                 placeholder="Enter project description" rows={3}

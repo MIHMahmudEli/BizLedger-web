@@ -36,9 +36,10 @@ const navGroups = [
     label: "Management",
     items: [
       { href: "/companies", label: "Companies", icon: Building2, roles: ["ADMIN", "MANAGER", "STAFF"] },
-      { href: "/contacts", label: "Contacts", icon: Users, roles: ["ADMIN", "MANAGER", "STAFF"] },
+      // Hidden for now for all user types — restore roles to re-enable
+      { href: "/contacts", label: "Contacts", icon: Users, roles: [] },
       { href: "/projects", label: "Projects", icon: FolderKanban, roles: ["ADMIN", "MANAGER", "STAFF"] },
-      { href: "/payments", label: "Payments", icon: CreditCard, roles: ["ADMIN", "MANAGER", "STAFF"] },
+      { href: "/payments", label: "Payments", icon: CreditCard, roles: [] },
     ],
   },
   {

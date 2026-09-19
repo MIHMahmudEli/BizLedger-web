@@ -16,6 +16,10 @@ export interface Company {
   category?: string;
   address?: string;
   addressArea?: string;
+  contactName?: string;
+  designation?: string;
+  phone?: string;
+  primaryContact?: Contact;
   website?: string;
   createdAt: string;
   updatedAt: string;
@@ -50,6 +54,7 @@ export type PaymentStatus =
 export interface Project {
   id: string;
   companyId: string;
+  company?: { id: string; companyName: string; addressArea?: string } | null;
   projectName: string;
   projectType: string;
   totalValue: string;
