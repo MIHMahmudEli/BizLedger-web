@@ -17,6 +17,8 @@ import {
   Moon,
   Monitor,
   Bell,
+  Code2,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
@@ -24,6 +26,17 @@ import { useNotifications } from "@/lib/notification-context";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import api from "@/lib/api";
 
 const navGroups = [
   {
@@ -39,6 +52,7 @@ const navGroups = [
       // Hidden for now for all user types — restore roles to re-enable
       { href: "/contacts", label: "Contacts", icon: Users, roles: [] },
       { href: "/projects", label: "Projects", icon: FolderKanban, roles: ["ADMIN", "MANAGER", "STAFF"] },
+      { href: "/developers", label: "Developers", icon: Code2, roles: ["ADMIN", "MANAGER", "STAFF"] },
       { href: "/payments", label: "Payments", icon: CreditCard, roles: [] },
     ],
   },
@@ -79,6 +93,41 @@ export function Sidebar({ className, onNavigate }: SidebarProps = {}) {
   const { logout, user } = useAuth();
   const { theme, setTheme } = useTheme();
   const { unreadCount } = useNotifications();
+
+  const [settingsOpen, setSettingsOpen] = React.useState(false);
+  const [settingsForm, setSettingsForm] = React.useState({ name: "", email: "", password: "" });
+  const [settingsSaving, setSettingsSaving] = React.useState(false);
+  const [settingsError, setSettingsError] = React.useState("");
+
+  // Only run when dialog is opened
+  React.useEffect(() => {
+    if (settingsOpen && user) {
+      setSettingsForm((prev) => ({ ...prev, name: user.name, email: user.email, password: "" }));
+      setSettingsError("");
+    }
+  }, [settingsOpen, user]);
+
+  const handleSaveSettings = async () => {
+    setSettingsSaving(true);
+    setSettingsError("");
+    try {
+      const payload: Record<string, string> = {};
+      if (settingsForm.name && settingsForm.name !== user?.name) payload.name = settingsForm.name;
+      if (settingsForm.email && settingsForm.email !== user?.email) payload.email = settingsForm.email;
+      if (settingsForm.password) payload.password = settingsForm.password;
+      
+      if (Object.keys(payload).length > 0) {
+        await api.patch("/users/me/credentials", payload);
+      }
+      setSettingsOpen(false);
+      window.location.reload();
+    } catch (err: unknown) {
+      const error = err as { response?: { data?: { message?: string } } };
+      setSettingsError(error.response?.data?.message || "Failed to update credentials");
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
 
   const visibleGroups = navGroups
     .map((group) => ({
@@ -207,8 +256,16 @@ export function Sidebar({ className, onNavigate }: SidebarProps = {}) {
               </div>
             )}
 
-            {/* Logout */}
-            <div className="px-3 pb-3">
+            {/* Settings & Logout */}
+            <div className="px-3 pb-3 space-y-1">
+              <Button
+                variant="ghost"
+                className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
+                onClick={() => setSettingsOpen(true)}
+              >
+                <Settings className="h-4 w-4" />
+                Settings
+              </Button>
               <Button
                 variant="ghost"
                 className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
@@ -220,6 +277,58 @@ export function Sidebar({ className, onNavigate }: SidebarProps = {}) {
             </div>
           </div>
         </div>
+
+        {/* Settings Dialog */}
+        <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Account Settings</DialogTitle>
+              <DialogDescription>
+                Update your account credentials here.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              {settingsError && (
+                <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+                  {settingsError}
+                </div>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="settings-name">Full Name</Label>
+                <Input
+                  id="settings-name"
+                  value={settingsForm.name}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, name: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="settings-email">Email</Label>
+                <Input
+                  id="settings-email"
+                  type="email"
+                  value={settingsForm.email}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, email: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="settings-password">New Password</Label>
+                <Input
+                  id="settings-password"
+                  type="password"
+                  placeholder="Leave blank to keep current password"
+                  value={settingsForm.password}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, password: e.target.value })}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setSettingsOpen(false)}>Cancel</Button>
+              <Button onClick={handleSaveSettings} disabled={settingsSaving}>
+                {settingsSaving ? "Saving..." : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </aside>
     </TooltipProvider>
   );

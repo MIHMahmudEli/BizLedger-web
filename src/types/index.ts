@@ -65,6 +65,30 @@ export interface Project {
   createdAt: string;
   updatedAt: string;
   financial?: ProjectFinancial;
+  developers?: Developer[];
+}
+
+export type DeveloperStatus = "ACTIVE" | "INACTIVE";
+
+export interface Developer {
+  id: string;
+  name: string;
+  role?: string;
+  email?: string;
+  phone?: string;
+  status: DeveloperStatus;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+  projectCount?: number;
+  projects?: {
+    id: string;
+    projectName: string;
+    projectType: string;
+    status: ProjectStatus;
+    totalValue: string;
+    companyName: string | null;
+  }[];
 }
 
 export interface ProjectFinancial {

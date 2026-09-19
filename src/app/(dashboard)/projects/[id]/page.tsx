@@ -23,6 +23,9 @@ import {
   MapPin,
   User,
   GripVertical,
+  Code2,
+  UserPlus,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -71,8 +74,9 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import api from "@/lib/api";
-import { Project, ProjectFinancial, ProjectStatus, Payment, PaymentMethod, PaginatedResponse, Company, Contact } from "@/types";
+import { Project, ProjectFinancial, ProjectStatus, Payment, PaymentMethod, PaginatedResponse, Company, Contact, Developer } from "@/types";
 import { formatCurrency, formatCurrencyCompact, formatDate } from "@/lib/utils";
+import { useAuth } from "@/lib/auth-context";
 
 const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
   PLANNED: "Planned", IN_PROGRESS: "In Progress", ON_HOLD: "On Hold",
@@ -128,7 +132,7 @@ const initialPaymentForm: PaymentForm = {
 };
 
 type SectionId = "project-details" | "financial";
-type BottomSectionId = "company" | "payments";
+type BottomSectionId = "company" | "developers" | "payments";
 
 function SortableCard({
   id,
@@ -175,6 +179,8 @@ function SortableCard({
 export default function ProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
+  const canManageDevelopers = user?.role === "ADMIN" || user?.role === "MANAGER";
   const projectId = params.id as string;
   const [project, setProject] = useState<(Project & { financial?: ProjectFinancial }) | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -191,7 +197,11 @@ export default function ProjectDetailPage() {
   const [company, setCompany] = useState<Company | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [sectionOrder, setSectionOrder] = useState<SectionId[]>(["project-details", "financial"]);
-  const [bottomSectionOrder, setBottomSectionOrder] = useState<BottomSectionId[]>(["company", "payments"]);
+  const [bottomSectionOrder, setBottomSectionOrder] = useState<BottomSectionId[]>(["company", "developers", "payments"]);
+  const [allDevelopers, setAllDevelopers] = useState<Developer[]>([]);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [selectedDeveloperIds, setSelectedDeveloperIds] = useState<string[]>([]);
+  const [assigning, setAssigning] = useState(false);
 
   useEffect(() => { fetchProject(); fetchPayments(); }, [projectId]);
 
@@ -199,7 +209,13 @@ export default function ProjectDetailPage() {
     const saved = localStorage.getItem(`project-section-order-${projectId}`);
     if (saved) { try { setSectionOrder(JSON.parse(saved)); } catch {} }
     const savedBottom = localStorage.getItem(`project-bottom-section-order-${projectId}`);
-    if (savedBottom) { try { setBottomSectionOrder(JSON.parse(savedBottom)); } catch {} }
+    if (savedBottom) {
+      try {
+        const parsed = JSON.parse(savedBottom) as BottomSectionId[];
+        const missing = (["company", "developers", "payments"] as BottomSectionId[]).filter((id) => !parsed.includes(id));
+        setBottomSectionOrder([...parsed, ...missing]);
+      } catch {}
+    }
   }, [projectId]);
 
   const sensors = useSensors(
@@ -287,6 +303,36 @@ export default function ProjectDetailPage() {
     if (!deletingPaymentId) return; setDeleting(true);
     try { await api.delete(`/payments/${deletingPaymentId}`); setDeleteOpen(false); setDeletingPaymentId(null); fetchProject(); fetchPayments(); }
     catch (error) { console.error("Failed to delete payment:", error); } finally { setDeleting(false); }
+  };
+
+  const openAssignDialog = async () => {
+    setSelectedDeveloperIds(project?.developers?.map((d) => d.id) ?? []);
+    setAssignDialogOpen(true);
+    if (allDevelopers.length === 0) {
+      try {
+        const response = await api.get<PaginatedResponse<Developer>>("/developers", { params: { limit: 100 } });
+        setAllDevelopers(response.data.data);
+      } catch (error) { console.error("Failed to fetch developers:", error); }
+    }
+  };
+
+  const toggleDeveloperSelection = (id: string) => {
+    setSelectedDeveloperIds((prev) => prev.includes(id) ? prev.filter((d) => d !== id) : [...prev, id]);
+  };
+
+  const saveDeveloperAssignment = async (developerIds: string[]) => {
+    setAssigning(true);
+    try {
+      await api.patch(`/projects/${projectId}/developers`, { developerIds });
+      setAssignDialogOpen(false);
+      fetchProject();
+    } catch (error) { console.error("Failed to assign developers:", error); }
+    finally { setAssigning(false); }
+  };
+
+  const handleRemoveDeveloper = (developerId: string) => {
+    const next = (project?.developers ?? []).filter((d) => d.id !== developerId).map((d) => d.id);
+    saveDeveloperAssignment(next);
   };
 
   if (loading) {
@@ -545,6 +591,72 @@ export default function ProjectDetailPage() {
                 );
               }
 
+              if (sectionId === "developers") {
+                return (
+                  <SortableCard
+                    key={sectionId}
+                    id={sectionId}
+                    title="Developers"
+                    icon={<Code2 className="h-4 w-4 text-primary" />}
+                    badge={project?.developers?.length ? (
+                      <Badge variant="secondary" className="font-normal text-xs">
+                        {project.developers.length} assigned
+                      </Badge>
+                    ) : undefined}
+                    action={canManageDevelopers ? (
+                      <Button variant="outline" size="sm" onClick={openAssignDialog} className="gap-1.5 h-8">
+                        <UserPlus className="h-3.5 w-3.5" />
+                        Assign Developers
+                      </Button>
+                    ) : undefined}
+                  >
+                    {!project?.developers || project.developers.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                        <Code2 className="h-10 w-10 mb-3 opacity-40" />
+                        <p className="text-sm font-medium">No developers assigned yet</p>
+                        {canManageDevelopers && <p className="text-xs mt-1">Assign developers to track who is building this project</p>}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {project.developers.map((dev) => (
+                          <div key={dev.id} className="flex items-start gap-3 p-3 rounded-xl border border-border/50 hover:border-border hover:bg-muted/30 transition-all">
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 shrink-0">
+                              <span className="text-xs font-bold text-primary">
+                                {dev.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                              </span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-medium truncate">{dev.name}</p>
+                                {dev.role && <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4 font-normal shrink-0">{dev.role}</Badge>}
+                              </div>
+                              <div className="flex items-center gap-3 mt-1 flex-wrap">
+                                {dev.email && (
+                                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                    <Mail className="h-2.5 w-2.5" />{dev.email}
+                                  </span>
+                                )}
+                                {dev.phone && (
+                                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                    <Phone className="h-2.5 w-2.5" />{dev.phone}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            {canManageDevelopers && (
+                              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
+                                onClick={() => handleRemoveDeveloper(dev.id)}>
+                                <X className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </SortableCard>
+                );
+              }
+
               if (sectionId === "payments") {
                 return (
                   <SortableCard
@@ -684,6 +796,47 @@ export default function ProjectDetailPage() {
             <Button variant="outline" onClick={() => setDeleteOpen(false)} disabled={deleting}>Cancel</Button>
             <Button variant="destructive" onClick={handleDeletePayment} disabled={deleting}>
               {deleting ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Developers */}
+      <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Assign Developers</DialogTitle>
+            <DialogDescription>Select the developers who are working on this project.</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-80 overflow-y-auto space-y-1 -mx-1 px-1">
+            {allDevelopers.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-6 text-center">No developer profiles yet. Add one from the Developers page first.</p>
+            ) : (
+              allDevelopers.map((dev) => {
+                const checked = selectedDeveloperIds.includes(dev.id);
+                return (
+                  <label key={dev.id}
+                    className={`flex items-center gap-3 p-2.5 rounded-lg border cursor-pointer transition-colors ${checked ? "border-primary bg-primary/5" : "border-transparent hover:bg-muted/50"}`}>
+                    <input type="checkbox" checked={checked} onChange={() => toggleDeveloperSelection(dev.id)} className="rounded border-input" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 shrink-0">
+                      <span className="text-xs font-bold text-primary">
+                        {dev.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium leading-tight">{dev.name}</p>
+                      {dev.role && <p className="text-xs text-muted-foreground">{dev.role}</p>}
+                    </div>
+                    {dev.status === "INACTIVE" && <Badge variant="secondary" className="text-[10px] font-normal">Inactive</Badge>}
+                  </label>
+                );
+              })
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAssignDialogOpen(false)} disabled={assigning}>Cancel</Button>
+            <Button onClick={() => saveDeveloperAssignment(selectedDeveloperIds)} disabled={assigning}>
+              {assigning ? "Saving..." : `Save (${selectedDeveloperIds.length})`}
             </Button>
           </DialogFooter>
         </DialogContent>

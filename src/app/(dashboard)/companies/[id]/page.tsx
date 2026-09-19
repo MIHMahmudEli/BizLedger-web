@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -21,6 +21,11 @@ import {
   Tag,
   Trash2,
   XCircle,
+  Users,
+  Check,
+  ChevronDown,
+  Search,
+  X,
 } from "lucide-react";
 import api from "@/lib/api";
 import { formatCurrency, formatCurrencyCompact, formatDate } from "@/lib/utils";
@@ -70,7 +75,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { Company, Contact, Project, ProjectStatus } from "@/types";
+import type { Company, Contact, Project, ProjectStatus, Developer, PaginatedResponse } from "@/types";
 
 const DESIGNATIONS = [
   "Owner", "Manager", "Director", "CEO", "CTO", "CFO", "Accountant",
@@ -114,10 +119,12 @@ const emptyContactForm: ContactForm = { name: "", designation: "", mobile: "", e
 interface ProjectForm {
   projectName: string; projectType: string; totalValue: string; status: ProjectStatus;
   startDate: string; deadline: string; description: string;
+  developerIds: string[];
 }
 const emptyProjectForm: ProjectForm = {
   projectName: "", projectType: "", totalValue: "", status: "PLANNED",
   startDate: "", deadline: "", description: "",
+  developerIds: [],
 };
 
 const projectStatusOptions: { value: ProjectStatus; label: string }[] = [
@@ -200,6 +207,42 @@ export default function CompanyDetailPage() {
   const [projectTypeSearch, setProjectTypeSearch] = useState("");
   const [projectTypeDropdownOpen, setProjectTypeDropdownOpen] = useState(false);
 
+  const [allDevelopers, setAllDevelopers] = useState<Developer[]>([]);
+  const [developerSearch, setDeveloperSearch] = useState("");
+  const [developerDropdownOpen, setDeveloperDropdownOpen] = useState(false);
+  const developerDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        developerDropdownRef.current &&
+        !developerDropdownRef.current.contains(event.target as Node)
+      ) {
+        setDeveloperDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const fetchDevelopers = async () => {
+    try {
+      const res = await api.get<PaginatedResponse<Developer>>("/developers", { params: { limit: 100 } });
+      setAllDevelopers(res.data.data);
+    } catch (error) {
+      console.error("Failed to fetch developers:", error);
+    }
+  };
+
+  const toggleProjectDeveloper = (id: string) => {
+    setProjectForm((prev) => ({
+      ...prev,
+      developerIds: prev.developerIds.includes(id)
+        ? prev.developerIds.filter((d) => d !== id)
+        : [...prev.developerIds, id],
+    }));
+  };
+
   const fetchCompany = useCallback(async () => {
     setLoading(true);
     try {
@@ -250,12 +293,46 @@ export default function CompanyDetailPage() {
     try { await api.delete(`/contacts/${deletingContact.id}`); setDeleteContactOpen(false); fetchCompany(); } catch {} finally { setContactDeleting(false); }
   };
 
-  const openCreateProject = () => { setEditingProject(null); setProjectForm(emptyProjectForm); setProjectTypeSearch(""); setProjectDialogOpen(true); };
-  const openEditProject = (p: Project) => { setEditingProject(p); setProjectForm({ projectName: p.projectName, projectType: p.projectType, totalValue: p.totalValue, status: p.status, startDate: p.startDate ? p.startDate.slice(0, 10) : "", deadline: p.deadline ? p.deadline.slice(0, 10) : "", description: p.description ?? "" }); setProjectTypeSearch(""); setProjectDialogOpen(true); };
+  const openCreateProject = () => {
+    setEditingProject(null);
+    setProjectForm(emptyProjectForm);
+    setProjectTypeSearch("");
+    setDeveloperSearch("");
+    setDeveloperDropdownOpen(false);
+    fetchDevelopers();
+    setProjectDialogOpen(true);
+  };
+  const openEditProject = (p: Project) => {
+    setEditingProject(p);
+    setProjectForm({
+      projectName: p.projectName,
+      projectType: p.projectType,
+      totalValue: p.totalValue,
+      status: p.status,
+      startDate: p.startDate ? p.startDate.slice(0, 10) : "",
+      deadline: p.deadline ? p.deadline.slice(0, 10) : "",
+      description: p.description ?? "",
+      developerIds: p.developers ? p.developers.map((d) => d.id) : [],
+    });
+    setProjectTypeSearch("");
+    setDeveloperSearch("");
+    setDeveloperDropdownOpen(false);
+    fetchDevelopers();
+    setProjectDialogOpen(true);
+  };
   const handleSaveProject = async () => {
     if (!projectForm.projectName.trim()) return; setProjectSaving(true);
     try {
-      const body = { projectName: projectForm.projectName.trim(), projectType: projectForm.projectType.trim() || undefined, totalValue: parseFloat(projectForm.totalValue) || 0, status: projectForm.status, startDate: projectForm.startDate || undefined, deadline: projectForm.deadline || undefined, description: projectForm.description.trim() || undefined };
+      const body = {
+        projectName: projectForm.projectName.trim(),
+        projectType: projectForm.projectType.trim() || undefined,
+        totalValue: parseFloat(projectForm.totalValue) || 0,
+        status: projectForm.status,
+        startDate: projectForm.startDate || undefined,
+        deadline: projectForm.deadline || undefined,
+        description: projectForm.description.trim() || undefined,
+        developerIds: projectForm.developerIds,
+      };
       if (editingProject) { await api.patch(`/projects/${editingProject.id}`, body); } else { await api.post(`/companies/${companyId}/projects`, body); }
       setProjectDialogOpen(false); fetchCompany();
     } catch {} finally { setProjectSaving(false); }
@@ -532,6 +609,15 @@ export default function CompanyDetailPage() {
                                 <div>
                                   <p className="font-medium">{project.projectName}</p>
                                   {project.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{project.description}</p>}
+                                  {project.developers && project.developers.length > 0 && (
+                                    <div className="flex items-center gap-1 flex-wrap mt-1">
+                                      {project.developers.map((dev) => (
+                                        <Badge key={dev.id} variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                                          {dev.name}
+                                        </Badge>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
                               </TableCell>
                               <TableCell><span className="text-sm text-muted-foreground">{project.projectType ?? "-"}</span></TableCell>
@@ -683,13 +769,157 @@ export default function CompanyDetailPage() {
               </div>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
+              <div className="space-y-2 sm:col-span-2">
                 <Label htmlFor="project-start">Start Date</Label>
                 <Input id="project-start" type="date" value={projectForm.startDate} onChange={(e) => setProjectForm({ ...projectForm, startDate: e.target.value })} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="project-deadline">Deadline</Label>
                 <Input id="project-deadline" type="date" value={projectForm.deadline} onChange={(e) => setProjectForm({ ...projectForm, deadline: e.target.value })} />
+              </div>
+              <div className="space-y-2" ref={developerDropdownRef}>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="company-project-developer-select">Assign Developers</Label>
+                {projectForm.developerIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setProjectForm((prev) => ({ ...prev, developerIds: [] }))}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Clear all ({projectForm.developerIds.length})
+                  </button>
+                )}
+              </div>
+
+              {projectForm.developerIds.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 p-2 rounded-md bg-muted/40 border">
+                  {projectForm.developerIds.map((id) => {
+                    const dev = allDevelopers.find((d) => d.id === id);
+                    if (!dev) return null;
+                    return (
+                      <Badge
+                        key={id}
+                        variant="secondary"
+                        className="pl-2 pr-1 py-1 flex items-center gap-1.5 text-xs bg-background shadow-xs border"
+                      >
+                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary/10 text-[9px] font-bold text-primary">
+                          {dev.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                        </span>
+                        <span className="font-medium">{dev.name}</span>
+                        {dev.role && (
+                          <span className="text-muted-foreground text-[10px]">({dev.role})</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleProjectDeveloper(id);
+                          }}
+                          className="h-4 w-4 rounded-full hover:bg-muted inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors ml-0.5"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="relative">
+                <button
+                  id="company-project-developer-select"
+                  type="button"
+                  onClick={() => setDeveloperDropdownOpen((prev) => !prev)}
+                  className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 text-left"
+                >
+                  <span className="flex items-center gap-2 text-muted-foreground">
+                    <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    {projectForm.developerIds.length === 0 ? (
+                      <span>Select developers to assign...</span>
+                    ) : (
+                      <span className="text-foreground font-medium">
+                        {projectForm.developerIds.length} developer{projectForm.developerIds.length > 1 ? "s" : ""} selected
+                      </span>
+                    )}
+                  </span>
+                  <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+                </button>
+
+                {developerDropdownOpen && (
+                  <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg overflow-hidden">
+                    <div className="p-2 border-b">
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                        <Input
+                          value={developerSearch}
+                          onChange={(e) => setDeveloperSearch(e.target.value)}
+                          placeholder="Search developer name or role..."
+                          className="pl-8 h-8 text-xs"
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+                    <div className="max-h-52 overflow-y-auto p-1 space-y-0.5">
+                      {allDevelopers.length === 0 ? (
+                        <div className="py-6 text-center text-xs text-muted-foreground">
+                          No developer profiles found. Add developers on the Developers page.
+                        </div>
+                      ) : (
+                        (() => {
+                          const filtered = allDevelopers.filter(
+                            (dev) =>
+                              dev.name.toLowerCase().includes(developerSearch.toLowerCase()) ||
+                              (dev.role && dev.role.toLowerCase().includes(developerSearch.toLowerCase()))
+                          );
+                          if (filtered.length === 0) {
+                            return (
+                              <div className="py-4 text-center text-xs text-muted-foreground">
+                                No developers match your search.
+                              </div>
+                            );
+                          }
+                          return filtered.map((dev) => {
+                            const isSelected = projectForm.developerIds.includes(dev.id);
+                            return (
+                              <div
+                                key={dev.id}
+                                onClick={() => toggleProjectDeveloper(dev.id)}
+                                className={`flex items-center gap-2.5 px-2.5 py-2 rounded-md cursor-pointer text-sm transition-colors ${
+                                  isSelected ? "bg-primary/10 text-primary font-medium" : "hover:bg-accent text-foreground"
+                                }`}
+                              >
+                                <div
+                                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+                                    isSelected ? "bg-primary border-primary text-primary-foreground" : "border-input"
+                                  }`}
+                                >
+                                  {isSelected && <Check className="h-3 w-3 text-white" />}
+                                </div>
+                                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 shrink-0">
+                                  <span className="text-[10px] font-bold text-primary">
+                                    {dev.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                                  </span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="truncate font-medium">{dev.name}</div>
+                                  {dev.role && (
+                                    <div className="text-xs text-muted-foreground truncate">{dev.role}</div>
+                                  )}
+                                </div>
+                                {dev.status === "INACTIVE" && (
+                                  <Badge variant="secondary" className="text-[10px] font-normal">
+                                    Inactive
+                                  </Badge>
+                                )}
+                              </div>
+                            );
+                          });
+                        })()
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
               </div>
             </div>
             <div className="space-y-2">

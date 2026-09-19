@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Calendar, CreditCard, FileText, DollarSign, Wallet, AlertTriangle } from "lucide-react";
+import { Calendar, CreditCard, FileText, DollarSign, Wallet, AlertTriangle, Printer, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,7 @@ import {
 import api from "@/lib/api";
 import type { Company, PaginatedResponse, Payment, PaymentMethod, Project, ProjectFinancial } from "@/types";
 import { formatCurrency, formatCurrencyCompact, formatDate } from "@/lib/utils";
+import { openPrintWindow, writePrintReport } from "@/lib/print";
 
 const REPORT_TABS = [
   { value: "payments", label: "Payment Report" },
@@ -102,6 +103,7 @@ function PaymentReportSection() {
   const [filterCompanyId, setFilterCompanyId] = useState("");
   const [companyFilterSearch, setCompanyFilterSearch] = useState("");
   const [companyFilterDropdownOpen, setCompanyFilterDropdownOpen] = useState(false);
+  const [printing, setPrinting] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -135,6 +137,64 @@ function PaymentReportSection() {
   useEffect(() => { fetchPayments(); }, [fetchPayments]);
 
   const hasFilters = paymentMethod !== "ALL" || dateFrom || dateTo || filterCompanyId;
+
+  const handlePrint = async () => {
+    const win = openPrintWindow();
+    if (!win) {
+      alert("Please allow pop-ups for this site to print.");
+      return;
+    }
+    setPrinting(true);
+    try {
+      const all: Payment[] = [];
+      let pageNum = 1;
+      let totalPages = 1;
+      do {
+        const params: Record<string, string | number> = { page: pageNum, limit: 100 };
+        if (paymentMethod !== "ALL") params.paymentMethod = paymentMethod;
+        if (dateFrom) params.dateFrom = dateFrom;
+        if (dateTo) params.dateTo = dateTo;
+        if (filterCompanyId) params.companyId = filterCompanyId;
+        const response = await api.get<PaginatedResponse<Payment>>("/reports/payments", { params });
+        all.push(...response.data.data);
+        totalPages = response.data.meta.totalPages;
+        pageNum += 1;
+      } while (pageNum <= totalPages);
+
+      const totalAmount = all.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+
+      const filters: string[] = [];
+      if (dateFrom) filters.push(`From: ${dateFrom}`);
+      if (dateTo) filters.push(`To: ${dateTo}`);
+      if (paymentMethod !== "ALL") filters.push(`Method: ${METHOD_LABELS[paymentMethod]}`);
+      if (filterCompanyId) filters.push(`Company: ${companies.find((c) => c.id === filterCompanyId)?.companyName ?? filterCompanyId}`);
+
+      writePrintReport(win, {
+        title: "Payment Report",
+        filters,
+        summary: [
+          { label: "Total Payments", value: String(all.length) },
+          { label: "Total Amount", value: formatCurrency(totalAmount) },
+        ],
+        columns: [
+          { header: "Date", accessor: (p) => formatDate(p.paymentDate) },
+          { header: "Amount", accessor: (p) => formatCurrency(p.amount), align: "right" },
+          { header: "Method", accessor: (p) => METHOD_LABELS[p.paymentMethod] },
+          { header: "Reference", accessor: (p) => p.reference || "-" },
+          { header: "Project", accessor: (p) => p.projectName || "-" },
+          { header: "Company", accessor: (p) => p.companyName || "-" },
+        ],
+        rows: all,
+        totals: { label: "Total", values: { Amount: formatCurrency(totalAmount) } },
+        emptyMessage: "No payments match the current filters.",
+      });
+    } catch {
+      win.close();
+      alert("Failed to prepare the print report. Please try again.");
+    } finally {
+      setPrinting(false);
+    }
+  };
 
   return (
     <Card>
@@ -209,6 +269,10 @@ function PaymentReportSection() {
               Clear
             </Button>
           )}
+          <Button variant="outline" size="sm" onClick={handlePrint} disabled={printing} className="gap-1.5 h-9 ml-auto">
+            {printing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
+            Print
+          </Button>
         </div>
 
         {loading ? (
@@ -365,6 +429,46 @@ function DetailsReportSection() {
     { value: 0, paid: 0, due: 0 }
   );
 
+  const handlePrint = () => {
+    const win = openPrintWindow();
+    if (!win) {
+      alert("Please allow pop-ups for this site to print.");
+      return;
+    }
+
+    const filters: string[] = [];
+    if (filterCompanyId) filters.push(`Company: ${companies.find((c) => c.id === filterCompanyId)?.companyName ?? filterCompanyId}`);
+
+    writePrintReport(win, {
+      title: "Details Report",
+      filters,
+      summary: [
+        { label: "Total Projects", value: String(rows.length) },
+        { label: "Total Value", value: formatCurrency(totals.value) },
+        { label: "Total Paid", value: formatCurrency(totals.paid) },
+        { label: "Total Due", value: formatCurrency(totals.due) },
+      ],
+      columns: [
+        { header: "Project", accessor: (r) => r.projectName },
+        { header: "Company", accessor: (r) => r.company?.companyName ?? "-" },
+        { header: "Type", accessor: (r) => r.projectType || "-" },
+        { header: "Value", accessor: (r) => formatCurrency(r.totalValue), align: "right" },
+        { header: "Paid", accessor: (r) => formatCurrency(r.financial?.totalPaid ?? 0), align: "right" },
+        { header: "Due", accessor: (r) => formatCurrency(r.financial?.due ?? 0), align: "right" },
+      ],
+      rows,
+      totals: {
+        label: "Total",
+        values: {
+          Value: formatCurrency(totals.value),
+          Paid: formatCurrency(totals.paid),
+          Due: formatCurrency(totals.due),
+        },
+      },
+      emptyMessage: "No projects match the current filters.",
+    });
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
@@ -464,6 +568,10 @@ function DetailsReportSection() {
                 Clear
               </Button>
             )}
+            <Button variant="outline" size="sm" onClick={handlePrint} className="gap-1.5 h-9 ml-auto">
+              <Printer className="h-4 w-4" />
+              Print
+            </Button>
           </div>
 
           {loading ? (

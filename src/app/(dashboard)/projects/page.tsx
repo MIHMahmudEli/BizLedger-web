@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -14,6 +14,11 @@ import {
   X,
   ExternalLink,
   MapPin,
+  Printer,
+  Loader2,
+  Users,
+  Check,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -51,8 +56,10 @@ import {
   ProjectStatus,
   PaginatedResponse,
   Company,
+  Developer,
 } from "@/types";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { openPrintWindow, writePrintReport } from "@/lib/print";
 
 const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
   PLANNED: "Planned",
@@ -122,6 +129,7 @@ interface ProjectForm {
   startDate: string;
   deadline: string;
   description: string;
+  developerIds: string[];
 }
 
 const initialForm: ProjectForm = {
@@ -133,6 +141,7 @@ const initialForm: ProjectForm = {
   startDate: "",
   deadline: "",
   description: "",
+  developerIds: [],
 };
 
 function ProjectsContent() {
@@ -161,12 +170,31 @@ function ProjectsContent() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [printing, setPrinting] = useState(false);
 
   const [companies, setCompanies] = useState<Company[]>([]);
   const [companySearch, setCompanySearch] = useState("");
   const [companyDropdownOpen, setCompanyDropdownOpen] = useState(false);
   const [projectTypeSearch, setProjectTypeSearch] = useState("");
   const [projectTypeDropdownOpen, setProjectTypeDropdownOpen] = useState(false);
+
+  const [allDevelopers, setAllDevelopers] = useState<Developer[]>([]);
+  const [developerSearch, setDeveloperSearch] = useState("");
+  const [developerDropdownOpen, setDeveloperDropdownOpen] = useState(false);
+  const developerDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        developerDropdownRef.current &&
+        !developerDropdownRef.current.contains(event.target as Node)
+      ) {
+        setDeveloperDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => { setDebouncedSearch(search); setPage(1); }, 300);
@@ -179,6 +207,7 @@ function ProjectsContent() {
 
   useEffect(() => {
     fetchCompanies();
+    fetchDevelopers();
   }, []);
 
   const fetchProjects = async () => {
@@ -201,12 +230,89 @@ function ProjectsContent() {
     }
   };
 
+  const handlePrint = async () => {
+    const win = openPrintWindow();
+    if (!win) {
+      alert("Please allow pop-ups for this site to print.");
+      return;
+    }
+    setPrinting(true);
+    try {
+      const all: ProjectRow[] = [];
+      let pageNum = 1;
+      let totalPages = 1;
+      do {
+        const params: Record<string, string | number> = { page: pageNum, limit: 100, search: debouncedSearch };
+        if (filterArea) params.area = filterArea;
+        if (filterCompanyId) params.companyId = filterCompanyId;
+        const response = await api.get<PaginatedResponse<ProjectRow>>("/projects", { params });
+        all.push(...response.data.data);
+        totalPages = response.data.meta.totalPages;
+        pageNum += 1;
+      } while (pageNum <= totalPages);
+
+      const filteredRows = filterPaymentStatus
+        ? all.filter((p) => p.financial?.paymentStatus === filterPaymentStatus)
+        : all;
+
+      const totalValue = filteredRows.reduce((sum, p) => sum + (parseFloat(p.totalValue) || 0), 0);
+      const totalPaid = filteredRows.reduce((sum, p) => sum + (parseFloat(p.financial?.totalPaid ?? "0") || 0), 0);
+      const totalDue = filteredRows.reduce((sum, p) => sum + (parseFloat(p.financial?.due ?? "0") || 0), 0);
+
+      const filters: string[] = [];
+      if (debouncedSearch) filters.push(`Search: "${debouncedSearch}"`);
+      if (filterArea) filters.push(`Area: ${filterArea}`);
+      if (filterCompanyId) filters.push(`Company: ${companies.find((c) => c.id === filterCompanyId)?.companyName ?? filterCompanyId}`);
+      if (filterPaymentStatus) filters.push(`Payment: ${PAYMENT_STATUS_LABELS[filterPaymentStatus] ?? filterPaymentStatus}`);
+
+      writePrintReport(win, {
+        title: "Projects Report",
+        filters,
+        summary: [
+          { label: "Total Projects", value: String(filteredRows.length) },
+          { label: "Total Value", value: formatCurrency(totalValue) },
+          { label: "Total Paid", value: formatCurrency(totalPaid) },
+          { label: "Total Due", value: formatCurrency(totalDue) },
+        ],
+        columns: [
+          { header: "Project", accessor: (p) => p.projectName },
+          { header: "Company", accessor: (p) => p.company?.companyName ?? "-" },
+          { header: "Type", accessor: (p) => p.projectType || "-" },
+          { header: "Value", accessor: (p) => formatCurrency(p.totalValue), align: "right" },
+          { header: "Paid", accessor: (p) => formatCurrency(p.financial?.totalPaid ?? 0), align: "right" },
+          { header: "Due", accessor: (p) => formatCurrency(p.financial?.due ?? 0), align: "right" },
+          { header: "Status", accessor: (p) => PROJECT_STATUS_LABELS[p.status] ?? p.status },
+          { header: "Payment", accessor: (p) => (p.financial?.paymentStatus ? PAYMENT_STATUS_LABELS[p.financial.paymentStatus] : "N/A") },
+          { header: "Developers", accessor: (p) => p.developers && p.developers.length > 0 ? p.developers.map((d) => d.name).join(", ") : "Unassigned" },
+        ],
+        rows: filteredRows,
+        totals: {
+          label: "Total",
+          values: {
+            Value: formatCurrency(totalValue),
+            Paid: formatCurrency(totalPaid),
+            Due: formatCurrency(totalDue),
+          },
+        },
+        emptyMessage: "No projects match the current filters.",
+      });
+    } catch {
+      win.close();
+      alert("Failed to prepare the print report. Please try again.");
+    } finally {
+      setPrinting(false);
+    }
+  };
+
   const openAddDialog = () => {
     setEditingId(null);
     setForm(initialForm);
     setCompanySearch("");
     setProjectTypeSearch("");
+    setDeveloperSearch("");
+    setDeveloperDropdownOpen(false);
     fetchCompanies();
+    fetchDevelopers();
     setFormOpen(true);
   };
 
@@ -221,10 +327,14 @@ function ProjectsContent() {
       startDate: project.startDate ? project.startDate.split("T")[0] : "",
       deadline: project.deadline ? project.deadline.split("T")[0] : "",
       description: project.description || "",
+      developerIds: project.developers ? project.developers.map((d) => d.id) : [],
     });
     setCompanySearch("");
     setProjectTypeSearch("");
+    setDeveloperSearch("");
+    setDeveloperDropdownOpen(false);
     fetchCompanies();
+    fetchDevelopers();
     setFormOpen(true);
   };
 
@@ -235,6 +345,24 @@ function ProjectsContent() {
 
   const handleFormChange = (field: keyof ProjectForm, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const toggleDeveloper = (id: string) => {
+    setForm((prev) => ({
+      ...prev,
+      developerIds: prev.developerIds.includes(id)
+        ? prev.developerIds.filter((d) => d !== id)
+        : [...prev.developerIds, id],
+    }));
+  };
+
+  const fetchDevelopers = async () => {
+    try {
+      const response = await api.get<PaginatedResponse<Developer>>("/developers", { params: { limit: 100 } });
+      setAllDevelopers(response.data.data);
+    } catch (error) {
+      console.error("Failed to fetch developers:", error);
+    }
   };
 
   const fetchCompanies = async () => {
@@ -265,6 +393,7 @@ function ProjectsContent() {
         startDate: form.startDate || undefined,
         deadline: form.deadline || undefined,
         description: form.description || undefined,
+        developerIds: form.developerIds,
       };
       if (editingId) {
         await api.patch(`/projects/${editingId}`, payload);
@@ -304,10 +433,16 @@ function ProjectsContent() {
           <h1 className="text-2xl font-bold tracking-tight">Projects</h1>
           <p className="text-sm text-muted-foreground">Track and manage your business projects</p>
         </div>
-        <Button onClick={openAddDialog} className="gap-2 w-full sm:w-auto">
-          <Plus className="h-4 w-4" />
-          Add Project
-        </Button>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={handlePrint} disabled={printing} className="gap-2 flex-1 sm:flex-none">
+            {printing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
+            Print
+          </Button>
+          <Button onClick={openAddDialog} className="gap-2 flex-1 sm:flex-none">
+            <Plus className="h-4 w-4" />
+            Add Project
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-4">
@@ -435,6 +570,7 @@ function ProjectsContent() {
                     <TableHead className="font-semibold text-right">Due</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="font-semibold">Payment</TableHead>
+                    <TableHead className="font-semibold">Developers</TableHead>
                     <TableHead className="w-[100px] font-semibold text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -457,6 +593,7 @@ function ProjectsContent() {
                       <TableCell className="text-right"><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
                       <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
                       <TableCell><Skeleton className="h-5 w-24 rounded-full" /></TableCell>
+                      <TableCell><Skeleton className="h-6 w-16 rounded-full" /></TableCell>
                       <TableCell className="text-right"><Skeleton className="h-8 w-16 ml-auto" /></TableCell>
                     </TableRow>
                   ))}
@@ -481,6 +618,7 @@ function ProjectsContent() {
                   <TableHead className="font-semibold text-right">Due</TableHead>
                   <TableHead className="font-semibold">Status</TableHead>
                   <TableHead className="font-semibold">Payment</TableHead>
+                  <TableHead className="font-semibold">Developers</TableHead>
                   <TableHead className="w-[100px] font-semibold text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -533,6 +671,23 @@ function ProjectsContent() {
                       <Badge variant="secondary" className={`${PAYMENT_STATUS_COLORS[project.financial?.paymentStatus || "UNPAID"]} font-normal`}>
                         {project.financial?.paymentStatus ? PAYMENT_STATUS_LABELS[project.financial.paymentStatus] : "N/A"}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {project.developers && project.developers.length > 0 ? (
+                        <div className="flex flex-wrap items-center gap-2">
+                          {project.developers.map((dev) => (
+                            <Link 
+                              key={dev.id} 
+                              href={`/developers?search=${encodeURIComponent(dev.name)}`}
+                              className="text-sm text-primary hover:underline hover:text-primary/80 transition-colors"
+                            >
+                              {dev.name}
+                            </Link>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">Unassigned</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-end gap-1">
@@ -601,9 +756,15 @@ function ProjectsContent() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2">
-            {!editingId && (
-              <div className="space-y-2">
-                <Label>Company *</Label>
+            <div className="space-y-2">
+              <Label>Company *</Label>
+              {editingId ? (
+                <Input
+                  value={selectedCompany?.companyName || "N/A"}
+                  disabled
+                  className="bg-muted text-muted-foreground cursor-not-allowed"
+                />
+              ) : (
                 <div className="relative">
                   <Input
                     value={companySearch || selectedCompany?.companyName || ""}
@@ -624,8 +785,8 @@ function ProjectsContent() {
                     </div>
                   )}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
             <div className="space-y-2">
               <Label htmlFor="projectName">Project Name</Label>
               <Input id="projectName" value={form.projectName} onChange={(e) => handleFormChange("projectName", e.target.value)} placeholder="Enter project name" />
@@ -681,6 +842,144 @@ function ProjectsContent() {
             <div className="space-y-2">
               <Label htmlFor="deadline">Deadline</Label>
               <Input id="deadline" type="date" value={form.deadline} onChange={(e) => handleFormChange("deadline", e.target.value)} />
+            </div>
+            <div className="space-y-2" ref={developerDropdownRef}>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="developer-select">Assign Developers</Label>
+                {form.developerIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setForm((prev) => ({ ...prev, developerIds: [] }))}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Clear ({form.developerIds.length})
+                  </button>
+                )}
+              </div>
+
+              <div className="relative">
+                <button
+                  id="developer-select"
+                  type="button"
+                  onClick={() => setDeveloperDropdownOpen((prev) => !prev)}
+                  className="flex h-9 w-full items-center justify-between rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50 text-left"
+                >
+                  <span className="flex items-center gap-2 min-w-0 truncate text-muted-foreground">
+                    <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    {form.developerIds.length === 0 ? (
+                      <span className="truncate">Select developers...</span>
+                    ) : (
+                      <span className="text-foreground font-medium truncate">
+                        {form.developerIds.length} selected
+                      </span>
+                    )}
+                  </span>
+                  <ChevronDown className="h-4 w-4 shrink-0 opacity-50 ml-1" />
+                </button>
+
+                {developerDropdownOpen && (
+                  <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg overflow-hidden">
+                    <div className="p-2 border-b">
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                        <Input
+                          value={developerSearch}
+                          onChange={(e) => setDeveloperSearch(e.target.value)}
+                          placeholder="Search developers..."
+                          className="pl-8 h-8 text-xs"
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+                    <div className="max-h-52 overflow-y-auto p-1 space-y-0.5">
+                      {allDevelopers.length === 0 ? (
+                        <div className="py-6 text-center text-xs text-muted-foreground">
+                          No developer profiles found.
+                        </div>
+                      ) : (
+                        (() => {
+                          const filtered = allDevelopers.filter(
+                            (dev) =>
+                              dev.name.toLowerCase().includes(developerSearch.toLowerCase()) ||
+                              (dev.role && dev.role.toLowerCase().includes(developerSearch.toLowerCase()))
+                          );
+                          if (filtered.length === 0) {
+                            return (
+                              <div className="py-4 text-center text-xs text-muted-foreground">
+                                No matching developers
+                              </div>
+                            );
+                          }
+                          return filtered.map((dev) => {
+                            const isSelected = form.developerIds.includes(dev.id);
+                            return (
+                              <div
+                                key={dev.id}
+                                onClick={() => toggleDeveloper(dev.id)}
+                                className={`flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer text-xs transition-colors ${
+                                  isSelected ? "bg-primary/10 text-primary font-medium" : "hover:bg-accent text-foreground"
+                                }`}
+                              >
+                                <div
+                                  className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded border ${
+                                    isSelected ? "bg-primary border-primary text-primary-foreground" : "border-input"
+                                  }`}
+                                >
+                                  {isSelected && <Check className="h-2.5 w-2.5 text-white" />}
+                                </div>
+                                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 shrink-0">
+                                  <span className="text-[10px] font-bold text-primary">
+                                    {dev.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                                  </span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="truncate font-medium">{dev.name}</div>
+                                  {dev.role && (
+                                    <div className="text-[10px] text-muted-foreground truncate">{dev.role}</div>
+                                  )}
+                                </div>
+                                {dev.status === "INACTIVE" && (
+                                  <Badge variant="secondary" className="text-[9px] font-normal py-0 px-1">
+                                    Inactive
+                                  </Badge>
+                                )}
+                              </div>
+                            );
+                          });
+                        })()
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {form.developerIds.length > 0 && (
+                <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto pt-0.5">
+                  {form.developerIds.map((id) => {
+                    const dev = allDevelopers.find((d) => d.id === id);
+                    if (!dev) return null;
+                    return (
+                      <Badge
+                        key={id}
+                        variant="secondary"
+                        className="pl-1.5 pr-1 py-0.5 flex items-center gap-1 text-[11px] font-normal border"
+                      >
+                        <span className="truncate max-w-[110px]">{dev.name}</span>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleDeveloper(id);
+                          }}
+                          className="h-3.5 w-3.5 rounded-full hover:bg-muted inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          <X className="h-2.5 w-2.5" />
+                        </button>
+                      </Badge>
+                    );
+                  })}
+                </div>
+              )}
             </div>
             <div className="sm:col-span-2 space-y-2">
               <Label htmlFor="description">Description</Label>

@@ -16,8 +16,10 @@ import {
   MapPin,
   Tag,
   Loader2,
+  Printer,
 } from "lucide-react";
 import api from "@/lib/api";
+import { openPrintWindow, writePrintReport } from "@/lib/print";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -138,6 +140,7 @@ export default function CompaniesPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deletingCompany, setDeletingCompany] = useState<Company | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [printing, setPrinting] = useState(false);
 
   const uniqueAreas = [...new Set(companies.map((c) => c.addressArea).filter(Boolean))] as string[];
 
@@ -168,6 +171,57 @@ export default function CompaniesPage() {
   }, [searchDebounced, limit, filterCategory, filterArea, fetchCompanies]);
 
   const handlePageChange = (page: number) => fetchCompanies(page);
+
+  const handlePrint = async () => {
+    const win = openPrintWindow();
+    if (!win) {
+      alert("Please allow pop-ups for this site to print.");
+      return;
+    }
+    setPrinting(true);
+    try {
+      const all: Company[] = [];
+      let page = 1;
+      let totalPages = 1;
+      do {
+        const params: Record<string, string | number> = { page, limit: 100 };
+        if (searchDebounced) params.search = searchDebounced;
+        if (filterCategory) params.category = filterCategory;
+        if (filterArea) params.area = filterArea;
+        const { data } = await api.get<PaginatedResponse<Company>>("/companies", { params });
+        all.push(...data.data);
+        totalPages = data.meta.totalPages;
+        page += 1;
+      } while (page <= totalPages);
+
+      const filters: string[] = [];
+      if (searchDebounced) filters.push(`Search: "${searchDebounced}"`);
+      if (filterCategory) filters.push(`Category: ${filterCategory}`);
+      if (filterArea) filters.push(`Area: ${filterArea}`);
+
+      writePrintReport(win, {
+        title: "Companies Report",
+        filters,
+        summary: [{ label: "Total Companies", value: String(all.length) }],
+        columns: [
+          { header: "Company", accessor: (c) => c.companyName },
+          { header: "Category", accessor: (c) => c.category || "-" },
+          { header: "Contact", accessor: (c) => c.primaryContact?.name ?? c.contactName ?? "-" },
+          { header: "Designation", accessor: (c) => c.primaryContact?.designation ?? c.designation ?? "-" },
+          { header: "Phone", accessor: (c) => c.primaryContact?.mobile ?? c.phone ?? "-" },
+          { header: "Address", accessor: (c) => [c.address, c.addressArea].filter(Boolean).join(", ") || "-" },
+          { header: "Website", accessor: (c) => c.website || "-" },
+        ],
+        rows: all,
+        emptyMessage: "No companies match the current filters.",
+      });
+    } catch {
+      win.close();
+      alert("Failed to prepare the print report. Please try again.");
+    } finally {
+      setPrinting(false);
+    }
+  };
 
   const openCreateDialog = () => {
     setEditingCompany(null);
@@ -251,10 +305,16 @@ export default function CompaniesPage() {
             Manage your business contacts and company records
           </p>
         </div>
-        <Button onClick={openCreateDialog} className="gap-2 w-full sm:w-auto">
-          <Plus className="h-4 w-4" />
-          Add Company
-        </Button>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Button variant="outline" onClick={handlePrint} disabled={printing} className="gap-2 flex-1 sm:flex-none">
+            {printing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
+            Print
+          </Button>
+          <Button onClick={openCreateDialog} className="gap-2 flex-1 sm:flex-none">
+            <Plus className="h-4 w-4" />
+            Add Company
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col gap-4">
